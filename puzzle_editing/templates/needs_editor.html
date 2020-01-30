@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load puzzle_list %}
+{% block title %}
+Needs Editor
+{% endblock %}
+{% block main %}
+<h1>
+	Need Discussion Editors
+</h1>
+
+<h2>
+	Puzzles that need discussion editors
+</h2>
+
+{% puzzle_list needs_editors request.user %}
+{% endblock %}

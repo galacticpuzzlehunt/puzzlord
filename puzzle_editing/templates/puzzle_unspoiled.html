@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load markdown %}
+{% block title %}
+	{{ puzzle.spoiler_free_title }}
+{% endblock %}
+{% block main %}
+<h1>
+	{{ puzzle.spoiler_free_title }}
+</h1>
+<p>You are not yet spoiled on this puzzle! Do you want to be spoiled on it?</p>
+<form method="post">
+	{% csrf_token %}
+	<input type="submit" name="do_spoil" value="Spoil me">
+</form>
+<h2>Summary</h2>
+{{ puzzle.summary|markdown }}
+{% endblock %}

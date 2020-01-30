@@ -1,0 +1,28 @@
+{% load user_list %}
+{% load markdown %}
+{% if sessions %}
+<div class="table-wrap">
+<table class="classic">
+	<tr>
+		<th>Session</th>
+		<th>Puzzle</th>
+		<th>Summary</th>
+		<th>Puzzle Priority</th>
+		<th>Participants</th>
+	</tr>
+	{% for session in sessions %}
+		{% with session.puzzle as puzzle %}
+		<tr>
+			<td><a href="{% url 'testsolve_one' session.id %}">Session {{ session.id }}</a></td>
+			<td>{{ puzzle.id }}: {{ puzzle.spoiler_free_name }}</td>
+			<td class="small-md">{{ puzzle.summary|markdown }}</td>
+			<td>{{ puzzle.get_priority_display }}</td>
+			<td>{% user_list session.participants %}</td>
+		</tr>
+		{% endwith %}
+	{% endfor %}
+</table>
+</div>
+{% else %}
+<div class="empty">No sessions to list</div>
+{% endif %}

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load puzzle_list %}
+{% load testsolve_session_list %}
+{% load user_list %}
+{% load markdown %}
+{% block title %}
+Testsolving
+{% endblock %}
+{% block main %}
+<h1>
+	Testsolving
+</h1>
+<h2>Testsolving sessions you are in</h2>
+
+{% testsolve_session_list current_sessions %}
+
+<h2>Testsolving sessions you can join</h2>
+
+{% testsolve_session_list joinable_sessions %}
+
+<h2>Puzzles you can testsolve</h2>
+
+{% if testsolvable %}
+<form method="POST">
+{% csrf_token %}
+<input id="hide-test-authored" type="checkbox" class="hide-test-authored" checked> <label for="hide-test-authored">Hide your puzzles</label>
+<div class="table-wrap">
+<table class="classic">
+	<tr>
+		<th></th>
+		<th>ID/Name</th>
+		<th>Status</th>
+		<th>Authors</th>
+		<th>Summary</th>
+		<th>Priority</th>
+	</tr>
+	{% for puzzle_data in testsolvable %}
+	{% with puzzle_data.puzzle as puzzle %}
+	<tr
+		{% if puzzle.is_author %}
+		class="test-authored"
+		{% endif %}
+	>
+		<td>
+			<button
+				type="submit"
+				name="start_session"
+				value="{{ puzzle.id }}"
+				{% if puzzle_data.warning %}
+				data-warning="{{ puzzle_data.warning }}"
+				{% endif %}
+			>
+				Start new session
+			</button>
+			{% if puzzle_data.warning %}
+			<div>({{ puzzle_data.warning }}!)</div>
+			{% endif %}
+		</td>
+		<td>{{ puzzle.id }}: {{ puzzle.spoiler_free_name }}</td>
+		<td>{{ puzzle.get_status_display }}</td>
+		<td>{% user_list puzzle.authors %}</td>
+		<td class="small-md">{{ puzzle.summary|markdown }}</td>
+		<td>{{ puzzle.get_priority_display }}</td>
+	</tr>
+	{% endwith %}
+	{% endfor %}
+</table>
+</div>
+</form>
+{% else %}
+<div class="empty">No puzzles to list</div>
+{% endif %}
+
+<h2>Your past testsolving sessions</h2>
+
+{% testsolve_session_list past_sessions %}
+
+{% endblock %}
+
+{% block extrajs %}
+<script type="text/javascript">
+	document.querySelectorAll("button[data-warning]").forEach((button) => {
+		button.addEventListener('click', (event) => {
+			if (!confirm(`We don't recommend starting a new session to testsolve this puzzle because ${button.dataset.warning}. Would you like to continue anyway?`)) {
+				event.preventDefault();
+			}
+		});
+	});
+</script>
+{% endblock %}

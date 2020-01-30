@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load puzzle_list %}
+{% block title %}
+Factchecking
+{% endblock %}
+{% block main %}
+<h1>
+	Factchecking
+</h1>
+
+<h2>
+	Puzzles you are factchecking
+</h2>
+
+{% puzzle_list factchecking request.user %}
+
+<h2>
+	Puzzles that need factchecking
+</h2>
+
+{% puzzle_list needs_factchecking request.user %}
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}
+	{{ puzzle.spoiler_free_title }} / Answers
+{% endblock %}
+{% block main %}
+<h1>Assign Answer to {{ puzzle }}</h1>
+<a href="{% url 'puzzle' puzzle.id %}">🔙 to {{ puzzle }}</a>
+{% if spoiled %}
+<form method="post" id="answers-form">
+	{% csrf_token %}
+		{% for field in form %}
+			{{ field }}
+		{% endfor %}
+	{% if unspoiled_rounds and unspoiled_answers %}
+	<p>Not shown: {{ unspoiled_answers }} answer{{ unspoiled_answers|pluralize }} from {{ unspoiled_rounds }} round{{ unspoiled_answers|pluralize }} that you aren't spoiled on.
+	To assign them, you can visit <a href="{% url 'rounds' %}">Rounds</a> to spoil yourself on the rounds first.
+	</p>
+	{% endif %}
+	<input type="submit" value="Submit">
+</form>
+{% else %}
+<p>You are not spoiled on this puzzle! Why are you trying to assign answers to it?</p>
+<p>If you really want to, you can click back to it and spoil yourself.</p>
+{% endif %}
+{% endblock %}
+
+{% block extrajs %}
+<script type="text/javascript">
+	const form = document.getElementById('answers-form');
+	form.addEventListener('submit', (event) => {
+		const checked = form.querySelectorAll('input[type="checkbox"]:checked').length;
+		if (checked > 1 && !confirm(`You're trying to assign ${checked} answers to this puzzle; are you sure?`)) {
+			event.preventDefault();
+		}
+	});
+</script>
+{% endblock %}

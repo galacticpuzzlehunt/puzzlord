@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load user_list %}
+{% load comment_list %}
+{% load markdown %}
+{% block title %}
+	Testsolving {{ session.puzzle }}
+{% endblock %}
+{% block main %}
+<h1>
+	Testsolving ({{ session.puzzle }}, Session #{{ session.id }})</p>
+</h1>
+
+<p>Participants:</p>
+<table class="classic sortable">
+<tr><th>User</th><th>Fun rating</th><th>Difficulty rating</th><th>Done?</th></tr>
+{% for participation in session.participations.all %}
+<tr>
+	<td>{{ participation.user.username }}</td>
+	<td>{{ participation.fun_rating|default:"n/a" }}</td>
+	<td>{{ participation.difficulty_rating|default:"n/a" }}</td>
+	<td>{% if participation.ended %}done{% endif %}</td>
+</tr>
+{% endfor %}
+</table>
+
+{% if participation or spoiled %}
+
+{% if participation %}
+
+{% if spoiled %}
+<p class="warning">You are testsolving a puzzle you are spoiled on.</p>
+{% else %}
+<p>You are in this testsolving session.</p>
+{% endif %}
+
+{% if participation.ended %}
+<p class="warning">You finished this testsolve at {{ participation.ended }}</p>
+{% endif %}
+
+{% if session.joinable %}
+<form method="POST">
+	{% csrf_token %}
+	<p>This session is listed as joinable by other solvers.
+	<button type="submit" name="change_joinable" value="0">Set as non-joinable</button>
+	</p>
+</form>
+{% else %}
+<form method="POST">
+	{% csrf_token %}
+	<p>This session is not listed as joinable by other solvers.
+	<button type="submit" name="change_joinable" value="1">Set as joinable</button>
+	</p>
+</form>
+{% endif %}
+
+
+<form method="POST">
+	{% csrf_token %}
+	{{ guess_form }}
+	<input type="submit" name="do_guess" value="Guess">
+</form>
+
+<p><a href="{% url 'testsolve_finish' session.id %}">Done with the puzzle?</a> (You can confirm and leave feedback after clicking the link)</p>
+
+{% else %}
+<p>You are spoiled on {{ session.puzzle }}.</p>
+{% endif %}
+
+{% if guesses %}
+Past guesses:
+<ul>
+	{% for guess in session.guesses.all %}
+	<li>
+		<span class="guess {% if guess.correct %}correct{% else %}incorrect{% endif %}">
+			{{ guess.guess }}
+		</span>
+		<span class="date">guessed by {{ guess.user }} @ {{ guess.date }}</span>
+	</li>
+	{% endfor %}
+</ul>
+{% endif %}
+
+<h2>Puzzle</h2>
+{% if session.puzzle.content %}
+{{ session.puzzle.content|markdown }}
+{% else %}
+<div class="empty">(no puzzle yet)</div>
+{% endif %}
+
+{% comment_list session.puzzle session.comments.all comment_form %}
+{% else %}
+<p class="alert">You are neither participating in this testsolving session nor spoiled on the puzzle. Would you like to join this session?</p>
+<form method="POST">
+	{% csrf_token %}
+	<input type="submit" name="join" value="Join testsolving session">
+</form>
+{% endif %}
+{% endblock %}

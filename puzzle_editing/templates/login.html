@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}
+Login
+{% endblock %}
+{% block main %}
+
+{% if next %}
+	<p>Please login to see this page.</p>
+{% endif %}
+
+<form id="login" action='/login' method="post">
+	{% csrf_token %}
+	{{ form.non_field_errors }}
+
+	<table class="classic">
+	{{ form.as_table }}
+	</table>
+
+	<input type="submit" value="Submit">
+	<input type="hidden" name="next" value="{{ next }}">
+</form>
+{% endblock %}

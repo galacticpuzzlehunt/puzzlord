@@ -1,0 +1,35 @@
+{% load markdown %}
+{% load user_display %}
+<section class="comments">
+	<h2>Comments</h2>
+	<table class="classic">
+	{% for comment in comments %}
+	<tr
+		{% if comment.is_system %}
+		class="system"
+		{% elif comment.testsolve_session %}
+		class="testsolve"
+		{% elif comment.author.is_author %}
+		class="by-author"
+		{% endif %}
+	>
+		{% with comment.id as id %}
+		<td id="comment-{{ id }}">
+			<a href="#comment-{{ id }}" class="comment-id">(#{{ comment.id }})</a>
+			{% user_display comment.author %}
+			<div class="date">@ <span class="timestamp" data-timestamp="{{ comment.date.timestamp }}">{{ comment.date }}</span></div>
+			{% if comment.is_system %} (system){% endif %}
+			{% if comment.testsolve_session %} (testsolve session {{ comment.testsolve_session.id }}){% endif %}
+		</td>
+		{% endwith %}
+		<td>{{ comment.content|markdown }}</td>
+	</tr>
+	{% endfor %}
+	</table>
+
+	<form method="post">
+		{% csrf_token %}
+		{{ comment_form }}
+		<input type="submit" name="add_comment" value="Add Comment">
+	</form>
+</section>

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load markdown %}
+{% block title %}
+Rounds
+{% endblock %}
+{% block main %}
+<h1>
+	Rounds
+</h1>
+
+<input id="hide-assignments" type="checkbox" class="hide-assignments"> <label for="hide-assignments">Hide puzzle assignments</label>
+
+{% for round in rounds %}
+<h2>Round: {{ round.name }}</h2>
+{% if round.spoiled %}
+{{ round.description|markdown }}
+<div class="table-wrap">
+<table class="classic">
+	<tr>
+		<th colspan="2">Answer</th>
+		<th>Puzzle</th>
+		<th>Status</th>
+	</tr>
+	{% for answer in round.answers %}
+		{% if answer.puzzles %}
+		{% for puzzle in answer.puzzles %}
+		<tr>
+			{% if forloop.first %}
+			<td rowspan="{{ answer.puzzles|length }}">
+				<form method="post">
+					{% csrf_token %}
+					<button type="submit" name="delete_answer" value="{{ answer.id }}">
+						Delete
+					</button>
+				</form>
+			</td>
+			<td rowspan="{{ answer.puzzles|length }}">
+				{{ answer.answer }}
+			</td>
+			{% endif %}
+			<td>
+				<a href="{% url 'puzzle' puzzle.id %}">
+					<span class="assignment-spoiler">{{ puzzle }}</span>
+					<span class="assignment-unspoiler">(hidden)</span>
+				</a>
+			</td>
+			<td>
+				<span class="assignment-spoiler">{{ puzzle.get_status_display }}</span>
+				<span class="assignment-unspoiler">(hidden)</span>
+			</td>
+		</tr>
+		{% endfor %}
+		{% else %}
+		<tr>
+			<td>
+				<form method="post">
+					{% csrf_token %}
+					<button type="submit" name="delete_answer" value="{{ answer.id }}">
+						Delete
+					</button>
+				</form>
+			</td>
+			<td>{{ answer.answer }}</td>
+			<td colspan="2" class="empty">(no puzzle assigned)</td>
+		{% endif %}
+	{% endfor %}
+	<tr>
+		<td colspan="4">
+			<form method="post">
+				{% csrf_token %}
+				{{ round.form.as_p }}
+				<input type="submit" name="add_answer" value="Add answer">
+			</form>
+		</td>
+	</tr>
+</table>
+</div>
+{% else %}
+Description and {{ round.answers|length }} answer{{ round.answers|length|pluralize }} not shown because you're not spoiled.
+<form method="post">
+	{% csrf_token %}
+	<button type="submit" name="spoil_on" value="{{ round.id }}">Spoil me</button>
+</form>
+{% endif %}
+{% endfor %}
+
+<h2>New Round</h2>
+<form method="post">
+	{% csrf_token %}
+	<div class="table-wrap">
+	<table class="classic">
+	{{ new_round_form.as_table }}
+	</table>
+	</div>
+	<input type="submit" name="new_round" value="Submit new round">
+</form>
+
+{% endblock %}

@@ -1,0 +1,140 @@
+{% load static %}
+{% load countdown %}
+{% load nav_link %}
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="{% static "css/general.css" %}">
+		<link rel="shortcut icon" href="{% static 'favicon.ico' %}"/>
+		<title>{% block title %}Puzzlord{% endblock %}</title>
+	</head>
+	<body>
+		<nav id="nav-menu">
+			{% block nav %}
+			{% with request.path as current_path %}
+			<div class="nav-links">
+				{% nav_link current_path 'index' 'Puzzlord' %}
+				{% nav_link current_path 'new' 'New Puzzle' %}
+				{% nav_link current_path 'authored' 'Your Puzzles' %}
+				{% nav_link current_path 'testsolve_main' 'Testsolve' %}
+				{% nav_link current_path 'factcheck' 'Factcheck' %}
+				{% nav_link current_path 'postprod' 'Postprod' %}
+				{% nav_link current_path 'all' 'All Puzzles' %}
+				{% nav_link current_path 'needs_editor' 'Needs Editor' %}
+				{% if perms.puzzle_editing.change_round %}
+				{% nav_link current_path 'rounds' 'Rounds/Answers' %}
+				{% endif %}
+				{% nav_link current_path 'users' 'Users' %}
+				<button id="menu-button" type="button" class="menu-button">&#9776;</button>
+			</div>
+			{% endwith %}
+			<div class="nav-second">
+				<div class="nav-countdown">
+					{% countdown %}
+				</div>
+				<select id="theme" class="theme">
+					<option value="classic">classic</option>
+					<option value="dark">dark</option>
+					<option value="neopets">neopets</option>
+					<option value="jellybeans">jellybeans</option>
+					<option value="solarized">solarized</option>
+					<option value="flamewyrm">flamewyrm</option>
+				</select>
+				<div class="nav-login">
+				{% if request.user.is_authenticated %}
+				Logged in as <a href="/account">{{ request.user.username }}</a>
+				(<a href="/logout">Logout</a>)
+				{% else %}
+				<a href="/login">Login</a> or
+				<a href="/register">Register</a>
+				{% endif %}
+				</div>
+			</div>
+			{% endblock %}
+		</nav>
+		{% block outer_main %}
+		<main>
+			{% block main %}{% endblock %}
+		</main>
+		{% endblock %}
+		<script type="text/javascript">
+			document.querySelectorAll(".toggle-show").forEach((node) => {
+				const target = document.getElementById(node.dataset.target);
+				node.addEventListener('click', () => {
+					if (target.classList.contains('hidden')) {
+						target.classList.remove('hidden');
+						node.dataset.reshow = node.innerText;
+						node.innerText = node.dataset.rehide;
+					} else {
+						target.classList.add('hidden');
+						node.innerText = node.dataset.reshow;
+					}
+				});
+			});
+
+			const currentTheme = localStorage.getItem("theme") || "classic";
+			document.documentElement.setAttribute('data-theme', currentTheme);
+			const themeSelect = document.getElementById("theme");
+			themeSelect.value = currentTheme;
+			themeSelect.addEventListener("change", (event) => {
+				const value = event.target.value;
+				document.documentElement.setAttribute('data-theme', value);
+				localStorage.setItem("theme", value);
+			});
+
+			const navMenu = document.getElementById('nav-menu');
+			navMenu.classList.add('nav-menu-collapsed'); // by default but not if JS
+			document.getElementById('menu-button').addEventListener('click', (event) => {
+				if (navMenu.classList.contains('nav-menu-collapsed')) {
+					navMenu.classList.remove('nav-menu-collapsed');
+				} else {
+					navMenu.classList.add('nav-menu-collapsed');
+				}
+			});
+
+			document.querySelectorAll(".timestamp").forEach((node) => {
+				// thanks, canada
+				node.textContent = new Date(Number(node.dataset.timestamp) * 1000).toLocaleString('en-CA');
+				node.setAttribute('title', 'Automatically converted to your time zone');
+			});
+
+			document.querySelectorAll('.markdown-preview-toggle').forEach((node) => {
+				const textarea = node.parentNode.nextSibling;
+				const preview = textarea.nextSibling;
+				console.log(textarea);
+				console.log(preview);
+
+				node.addEventListener('click', () => {
+					if (preview.classList.contains('hidden')) {
+						preview.classList.remove('hidden');
+						textarea.classList.add('hidden');
+
+						preview.textContent = "Loading...";
+
+						fetch('/preview_markdown', {
+							method: 'POST',
+							body: textarea.value,
+						}).then((response) => response.json()).then((json) => {
+							console.log(json);
+							if (json.success) {
+								preview.innerHTML = json.output;
+							} else {
+								preview.textContent = "Error: " + json.error;
+							}
+						}).catch((error) => {
+							preview.textContent = "Error: " + error;
+						});
+					} else {
+						textarea.classList.remove('hidden');
+						preview.classList.add('hidden');
+					}
+				});
+			});
+
+		</script>
+		<script src="/static/sorttable.js"></script>
+		{% block extrajs %}{% endblock %}
+	</body>
+</html>

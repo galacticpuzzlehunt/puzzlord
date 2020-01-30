@@ -1,0 +1,8 @@
+# I like pip-tools for pinning dependencies: https://github.com/jazzband/pip-tools
+pip-tools
+django
+gevent
+gunicorn
+newrelic
+markdown
+bleach

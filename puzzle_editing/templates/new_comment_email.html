@@ -1,0 +1,17 @@
+{% load markdown %}
+<p>{% if is_system %}
+System message (on behalf of {{ author.username }}):
+{% else %}
+{{ author.username }} wrote:
+{% endif %}</p>
+
+{{ content|markdown }}
+
+<p>
+Puzzle: {{ request.scheme }}://{{ request.get_host }}{% url 'puzzle' puzzle.id %}
+</p>
+{% if testsolve_session %}
+<p>
+Testsolve session: {{ request.scheme }}://{{ request.get_host }}{% url 'testsolve_one' testsolve_session.id %}
+</p>
+{% endif %}

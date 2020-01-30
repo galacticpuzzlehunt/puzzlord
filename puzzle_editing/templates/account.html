@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Manage Account{% endblock %}
+{% block main %}
+
+You can also <a href="/change-password">change your password</a>.
+
+{% if success %}
+<div class="success">Information successfully saved!</div>
+{% endif %}
+
+<form id="account" action='/account' method="post">
+	{% csrf_token %}
+	{{ form.non_field_errors }}
+
+	<table class="classic">
+	{{ form.as_table }}
+	</table>
+
+	<input type="submit" value="Submit">
+</form>
+{% endblock %}

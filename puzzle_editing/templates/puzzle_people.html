@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}
+	{{ puzzle.spoiler_free_title }} / People
+{% endblock %}
+{% block main %}
+<h1>Edit People of {{ puzzle }}</h1>
+<form method="post">
+	{% csrf_token %}
+	<table class="classic">
+		{% for field in form %}
+			<tr>
+				<td class="label-cell">
+				{{ field.errors }}
+				{{ field.label_tag }}
+				{% if field.help_text %}
+				<p class="help">{{ field.help_text|safe }}</p>
+				{% endif %}
+				</td>
+				<td>
+				{{ field }}
+				</td>
+			</tr>
+		{% endfor %}
+	</table>
+	<input type="submit" value="Submit">
+</form>
+{% endblock %}

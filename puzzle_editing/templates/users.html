@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load puzzle_list %}
+{% load testsolve_session_list %}
+{% load markdown %}
+{% block title %}
+Users
+{% endblock %}
+{% block main %}
+	<h1>Users</h1>
+	* "Active" means any status other than Deferred, Dead, or Done.
+	<div class="table-wrap">
+	<table class="classic sortable">
+		<thead>
+		<tr>
+			<th colspan="2">
+			<th colspan="4">Authored</th>
+			<th colspan="4">Discussing</th>
+			<th colspan="4">Factchecking</th>
+		</tr>
+		<tr>
+			<th>User</th>
+			<th>Role</th>
+			<th>Active*</th><th class="deemph">Deferred</th><th class="deemph">Dead</th><th class="deemph">Done</th>
+			<th>Active*</th><th class="deemph">Deferred</th><th class="deemph">Dead</th><th class="deemph">Done</th>
+			<th>Active*</th><th class="deemph">Deferred</th><th class="deemph">Dead</th><th class="deemph">Done</th>
+		</tr>
+		</thead>
+		<tbody>
+		{% for user in users %}
+		<tr>
+			<td><a href="#user-{{ user.username }}">{{ user.full_display_name }}</a></td>
+			<td>
+				{% if user.is_staff %}
+				Superuser
+				{% elif user.is_meta_editor %}
+				Meta Editor
+				{% endif %}
+			</td>
+			<td>{{ user.authored_active }}</td>
+			<td class="deemph">{{ user.authored_deferred }}</td>
+			<td class="deemph">{{ user.authored_dead }}</td>
+			<td class="deemph">{{ user.authored_done }}</td>
+			<td>{{ user.discussing_active }}</td>
+			<td class="deemph">{{ user.discussing_deferred }}</td>
+			<td class="deemph">{{ user.discussing_dead }}</td>
+			<td class="deemph">{{ user.discussing_done }}</td>
+			<td>{{ user.factchecking_active }}</td>
+			<td class="deemph">{{ user.factchecking_deferred }}</td>
+			<td class="deemph">{{ user.factchecking_dead }}</td>
+			<td class="deemph">{{ user.factchecking_done }}</td>
+		</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+	</div>
+
+	{% for user in users %}
+	<div id="user-{{ user.username }}">
+		{% if user.profile.display_name %}
+			<h2>{{ user.profile.display_name }}</h2>
+		{% else %}
+			<h2>{{ user.username }}</h2>
+		{% endif %}
+		<ul>
+			<li>Username: {{ user.username }}</li>
+			{% if user.profile %}
+			{% if user.profile.discord_username %}
+			<li>Discord: <code>{{ user.profile.discord_username }}</code></li>
+			{% endif %}
+			{% if user.profile.bio %}
+			<li>Bio:
+				{{ user.profile.bio|markdown }}
+			</li>
+			{% endif %}
+			{% endif %}
+		</ul>
+	</div>
+	{% endfor %}
+{% endblock %}

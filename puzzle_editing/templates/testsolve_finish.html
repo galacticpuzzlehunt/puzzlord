@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load user_list %}
+{% load markdown %}
+{% block title %}
+Finish Testsolving {{ session.puzzle }}
+{% endblock %}
+{% block main %}
+<h1>
+	Finish Testsolving ({{ session.puzzle }}, Session #{{ session.id }})</p>
+</h1>
+
+<p><a href="{% url 'testsolve_one' session.id %}">Back to puzzle</a></p>
+
+{% if participation %}
+
+Some questions taken from puzzletron to consider answering:
+<ul>
+	<li>Were you in any way already spoiled on this puzzle before starting this test solve?</li>
+	<li>How long did you spend on this puzzle?</li>
+	<li>Describe what you tried when working on this puzzle. If you had a breakthrough point, describe in detail what in the puzzle led you to it.</li>
+	<li>What did you like/dislike about this puzzle?</li>
+	<li>Is there anything you think should be changed with the puzzle?</li>
+	<li>Is there anything wrong with the technical details/formatting of the puzzle?</li>
+	<li>Were there any special skills required to solve this puzzle?</li>
+</ul>
+<form method="post">
+{% csrf_token %}
+{{ form.non_field_errors }}
+<table class="classic">
+{{ form.as_table }}
+</table>
+<input type="submit" value="Submit">
+</form>
+
+{% else %}
+
+You do not appear to be participating in testsolve session #{{ session.id }}.
+
+{% endif %}
+{% endblock %}

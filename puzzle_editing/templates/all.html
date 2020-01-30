@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% load puzzle_list %}
+{% block title %}
+All Puzzles
+{% endblock %}
+{% block main %}
+	<h1>All Puzzles</h1>
+	{% puzzle_list puzzles request.user %}
+{% endblock %}

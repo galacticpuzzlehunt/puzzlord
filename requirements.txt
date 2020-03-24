@@ -5,15 +5,15 @@
 #    pip-compile
 #
 asgiref==3.2.3            # via django
-bleach==3.1.0
+bleach==3.1.2             # via -r requirements.in
 click==7.0                # via pip-tools
-django==3.0.2
-gevent==1.4.0
+django==3.0.2             # via -r requirements.in
+gevent==1.4.0             # via -r requirements.in
 greenlet==0.4.15          # via gevent
-gunicorn==20.0.4
-markdown==3.1.1
-newrelic==5.4.1.134
-pip-tools==4.4.0
+gunicorn==20.0.4          # via -r requirements.in
+markdown==3.1.1           # via -r requirements.in
+newrelic==5.4.1.134       # via -r requirements.in
+pip-tools==4.4.0          # via -r requirements.in
 pytz==2019.3              # via django
 six==1.14.0               # via bleach, pip-tools
 sqlparse==0.3.0           # via django

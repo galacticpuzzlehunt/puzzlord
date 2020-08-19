@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load markdown %}
+{% load puzzle_display %}
 {% block title %}
 Rounds
 {% endblock %}
@@ -8,10 +9,14 @@ Rounds
 	Rounds
 </h1>
 
-<input id="hide-assignments" type="checkbox" class="hide-assignments"> <label for="hide-assignments">Hide puzzle assignments</label>
+<input id="hide-assignments" type="checkbox" class="hide-assignments" checked> <label for="hide-assignments">Hide puzzle assignments</label>
+<input id="hide-delete-answer" type="checkbox" class="hide-delete-answer" checked> <label for="hide-delete-answer">Hide delete answer buttons</label>
 
 {% for round in rounds %}
 <h2>Round: {{ round.name }}</h2>
+<p>
+<a href="{% url 'edit_round' round.id %}">Edit/delete round</a>
+</p>
 {% if round.spoiled %}
 {{ round.description|markdown }}
 <div class="table-wrap">
@@ -20,6 +25,7 @@ Rounds
 		<th colspan="2">Answer</th>
 		<th>Puzzle</th>
 		<th>Status</th>
+		<th>Notes</th>
 	</tr>
 	{% for answer in round.answers %}
 		{% if answer.puzzles %}
@@ -29,7 +35,7 @@ Rounds
 			<td rowspan="{{ answer.puzzles|length }}">
 				<form method="post">
 					{% csrf_token %}
-					<button type="submit" name="delete_answer" value="{{ answer.id }}">
+					<button type="submit" name="delete_answer" value="{{ answer.id }}" class="delete-answer-button">
 						Delete
 					</button>
 				</form>
@@ -40,7 +46,7 @@ Rounds
 			{% endif %}
 			<td>
 				<a href="{% url 'puzzle' puzzle.id %}">
-					<span class="assignment-spoiler">{{ puzzle }}</span>
+					<span class="assignment-spoiler">{% puzzle_display puzzle %}</span>
 					<span class="assignment-unspoiler">(hidden)</span>
 				</a>
 			</td>
@@ -48,6 +54,11 @@ Rounds
 				<span class="assignment-spoiler">{{ puzzle.get_status_display }}</span>
 				<span class="assignment-unspoiler">(hidden)</span>
 			</td>
+			{% if forloop.first %}
+			<td rowspan="{{ answer.puzzles|length }}" class="small-md">
+				{% if answer.notes %}{{ answer.notes|markdown }}{% endif %}
+			</td>
+			{% endif %}
 		</tr>
 		{% endfor %}
 		{% else %}
@@ -55,21 +66,26 @@ Rounds
 			<td>
 				<form method="post">
 					{% csrf_token %}
-					<button type="submit" name="delete_answer" value="{{ answer.id }}">
+					<button type="submit" name="delete_answer" value="{{ answer.id }}" class="delete-answer-button">
 						Delete
 					</button>
 				</form>
 			</td>
 			<td>{{ answer.answer }}</td>
 			<td colspan="2" class="empty">(no puzzle assigned)</td>
+			<td class="small-md">
+				{% if answer.notes %}{{ answer.notes|markdown }}{% endif %}
+			</td>
 		{% endif %}
 	{% endfor %}
 	<tr>
-		<td colspan="4">
+		<td colspan="5">
 			<form method="post">
 				{% csrf_token %}
 				{{ round.form.as_p }}
 				<input type="submit" name="add_answer" value="Add answer">
+				or
+				<a href="{% url 'bulk_add_answers' round.id %}">bulk-add answers</a>
 			</form>
 		</td>
 	</tr>

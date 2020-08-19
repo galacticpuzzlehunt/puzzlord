@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load user_list %}
+{% load markdown %}
+{% block title %}
+Spoiled People
+{% endblock %}
+{% block main %}
+<h1>
+	Spoiled People
+</h1>
+
+{% if puzzles %}
+<form method="POST">
+{% csrf_token %}
+<div class="table-wrap">
+<table class="classic sortable">
+	<tr>
+		<th>ID/Name</th>
+		<th>Summary</th>
+		<th>Status</th>
+		<th>Spoiled</th>
+		<th>Currently Testing</th>
+        <th>Priority</th>
+	</tr>
+	{% for puzzle in puzzles %}
+	<tr>
+		<td>{% if puzzle.is_spoiled %}<a href="{% url 'puzzle' puzzle.id %}">{%endif %}{{ puzzle.id }}: {{ puzzle.spoiler_free_name }}{% if puzzle.is_spoiled %}</a>{%endif %}</td>
+		<td class="small-md">{{ puzzle.summary|markdown }}</td>
+		<td>{{ puzzle.get_status_display }}</td>
+		<td>{% user_list puzzle.spoiled %}</td>
+		<td class="testsessions">{% for session in puzzle.testsolve_sessions.all %}
+            {% if session.active_participants %}
+        <span><a href="{% url 'testsolve_one' session.id %}">{{session.id}}</a>: {% user_list session.active_participants %}</span>
+        {% endif %}
+        {% endfor %}
+        </td>
+		<td sorttable_customkey="{{ puzzle.priority }}">{{ puzzle.get_priority_display }}</td>
+	</tr>
+	{% endfor %}
+</table>
+</div>
+</form>
+{% else %}
+<div class="empty">No puzzles to list</div>
+{% endif %}
+
+
+{% endblock %}

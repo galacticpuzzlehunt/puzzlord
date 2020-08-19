@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% load puzzle_list %}
-{% load testsolve_session_list %}
 {% load markdown %}
 {% block title %}
 Users
@@ -16,6 +15,7 @@ Users
 			<th colspan="4">Authored</th>
 			<th colspan="4">Discussing</th>
 			<th colspan="4">Factchecking</th>
+			<th colspan="2">Testsolving</th>
 		</tr>
 		<tr>
 			<th>User</th>
@@ -23,12 +23,13 @@ Users
 			<th>Active*</th><th class="deemph">Deferred</th><th class="deemph">Dead</th><th class="deemph">Done</th>
 			<th>Active*</th><th class="deemph">Deferred</th><th class="deemph">Dead</th><th class="deemph">Done</th>
 			<th>Active*</th><th class="deemph">Deferred</th><th class="deemph">Dead</th><th class="deemph">Done</th>
+			<th>Done</th><th>In Progress</th>
 		</tr>
 		</thead>
 		<tbody>
 		{% for user in users %}
 		<tr>
-			<td><a href="#user-{{ user.username }}">{{ user.full_display_name }}</a></td>
+			<td><a href="{% url 'user' user.username %}">{{ user.full_display_name }}</a></td>
 			<td>
 				{% if user.is_staff %}
 				Superuser
@@ -48,6 +49,8 @@ Users
 			<td class="deemph">{{ user.factchecking_deferred }}</td>
 			<td class="deemph">{{ user.factchecking_dead }}</td>
 			<td class="deemph">{{ user.factchecking_done }}</td>
+			<td>{{ user.testsolving_done }}</td>
+			<td>{{ user.testsolving_in_progress }}</td>
 		</tr>
 		{% endfor %}
 		</tbody>
@@ -56,11 +59,9 @@ Users
 
 	{% for user in users %}
 	<div id="user-{{ user.username }}">
-		{% if user.profile.display_name %}
-			<h2>{{ user.profile.display_name }}</h2>
-		{% else %}
-			<h2>{{ user.username }}</h2>
-		{% endif %}
+		<a href="{% url 'user' user.username %}">
+			<h2>{{ user.profile.display_name|default:user.username }}</h2>
+		</a>
 		<ul>
 			<li>Username: {{ user.username }}</li>
 			{% if user.profile %}

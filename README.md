@@ -13,7 +13,7 @@ Some goals and consequences of Puzzlord's design:
     - JavaScript dependence is minimized. When useful, we use modern JS and don't try to support old browsers.
     - To reduce code, we rely on Django built-in features when possible.
     - No uploading files for puzzles or solutions. Instead, you can just paste links to external files or docs, which is what we almost always did when using Puzzletron anyway.
-    - No direct connection to postprodding. It is expected that postprodders will format the puzzle elsewhere and simply report what they did in Puzzlord.
+    - ~~No direct connection to postprodding. It is expected that postprodders will format the puzzle elsewhere and simply report what they did in Puzzlord.~~ We ended up implementing postprodding in Puzzlord, but it's probably one of the trickier parts to get working, and you can ignore it in some workflows.
 - Permissiveness, which dovetails with simplicity, and is OK because we generally trust our writing team:
     - Anybody can change the status of puzzles and add/remove themselves or other people to/from any puzzle-related role (author, discussion editor, factchecker, postprodder, spoiled).
 - Improved spoiler safety:
@@ -46,6 +46,7 @@ Some features are still missing.
 	- the sender and reply-to email in `puzzle_editing/messaging.py`
 	- the SECRET_KEY and email credentials in `settings/base.py`
 	- the hosts in `settings/staging.py` and `settings/prod.py`
+- Install pre-commit hooks `pre-commit install` (may need to `pip3 install pre-commit` first)
 - Start the development server with `python manage.py runserver`
 - If you get a warning (red text) about making migrations run `python manage.py migrate`
 

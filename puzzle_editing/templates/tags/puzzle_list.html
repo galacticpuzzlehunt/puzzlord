@@ -1,51 +1,62 @@
 {% load user_list %}
 {% load markdown %}
+{% load puzzle_link %}
+{% load humanize %}
 {% if puzzles %}
-<input id="hide-dead-{{ random_id }}" type="checkbox" class="hide-dead" checked> <label for="hide-dead-{{ random_id }}">Hide dead puzzles</label>
-<input id="hide-deferred-{{ random_id }}" type="checkbox" class="hide-deferred" checked> <label for="hide-deferred-{{ random_id }}">Hide deferred puzzles</label>
+<input id="hide-dead-{{ random_id }}" type="checkbox" class="hide-dead" checked> <label
+	for="hide-dead-{{ random_id }}">Hide dead puzzles</label>
+<input id="hide-deferred-{{ random_id }}" type="checkbox" class="hide-deferred" checked> <label
+	for="hide-deferred-{{ random_id }}">Hide deferred puzzles</label>
+<input id="hide-visited-{{ random_id }}" type="checkbox" class="hide-visited"> <label
+	for="hide-visited-{{ random_id }}">Only show spoiled+unvisited</label>
 <div class="table-wrap">
-<table class="classic sortable">
-	<tr>
-		<th>🤔</th>
-		<th>ID/Name</th>
-		<th>Status</th>
-		<th>Authors</th>
-		<th>Summary</th>
-		<th>Priority</th>
-		<th>Editors</th>
-		<th>Last Updated</th>
-		<th>Last Comment</th>
-	</tr>
-	{% for puzzle in puzzles %}
-	<tr{% if puzzle.status == dead_status %} class="dead"{% elif puzzle.status == deferred_status %} class="deferred"{% endif %}>
-		{% if puzzle.is_author %}
-		<td sorttable_customkey="1" title="You are an author">📝</td>
-		{% elif puzzle.is_discussing %}
-		<td sorttable_customkey="2" title="You are a discussion editor">💬</td>
-		{% elif puzzle.is_factchecking %}
-		<td sorttable_customkey="3" title="You are a factchecker">🛂</td>
-		{% elif puzzle.is_postprodding %}
-		<td sorttable_customkey="4" title="You are a postprodder">🖼️</td>
-		{% elif puzzle.is_spoiled %}
-		<td sorttable_customkey="98" title="You are spoiled">👀</td>
-		{% else %}
-		<td sorttable_customkey="99" title="You are not spoiled">❓</td>
-		{% endif %}
-		<td sorttable_customkey="{{ puzzle.id }}"><a href="{% url 'puzzle' puzzle.id %}">{{ puzzle.id }}: {{ puzzle.spoiler_free_name }}</a></td>
-		<td sorttable_customkey="{{ puzzle.get_status_rank }}">{{ puzzle.get_status_display }}</td>
-		<td>{% user_list puzzle.authors %}</td>
-		<td class="small-md">{{ puzzle.summary|markdown }}</td>
-		<td sorttable_customkey="{{ puzzle.priority }}">{{ puzzle.get_priority_display }}</td>
-		<td>{{ puzzle.editors_display }}</td>
-		<td sorttable_customkey="{{ puzzle.last_updated.timestamp }}" class="timestamp" data-timestamp="{{ puzzle.last_updated.timestamp }}">{{ puzzle.last_updated }}</td>
-		{% if puzzle.last_comment_date %}
-			<td sorttable_customkey="{{ puzzle.last_comment_date.timestamp }}" class="timestamp" data-timestamp="{{ puzzle.last_comment_date.timestamp }}">{{ puzzle.last_comment_date }}</td>
-		{% else %}
+	<table class="classic sortable">
+		<tr>
+			<th>🤔</th>
+			<th>ID/Name</th>
+			<th>Status</th>
+			<th>Last Status Change</th>
+			<th>Authors</th>
+			<th>Summary</th>
+			<th>Priority</th>
+			<th>Editors</th>
+			<th>Last Updated</th>
+			<th>Last Comment</th>
+		</tr>
+		{% for puzzle in puzzles %}
+		<tr
+			class="puzzle-row {% if puzzle.status == dead_status %}dead{% elif puzzle.status == deferred_status %}deferred{% endif %} {% if puzzle.is_spoiled %}spoiled {% if not puzzle.last_visited_date or puzzle.last_comment_date and puzzle.last_comment_date > puzzle.last_visited_date %}unvisited{% endif %}{% endif %}">
+			{% if puzzle.is_author %}
+			<td sorttable_customkey="1" title="You are an author">📝</td>
+			{% elif puzzle.is_discussing %}
+			<td sorttable_customkey="2" title="You are a discussion editor">💬</td>
+			{% elif puzzle.is_factchecking %}
+			<td sorttable_customkey="3" title="You are a factchecker">🛂</td>
+			{% elif puzzle.is_postprodding %}
+			<td sorttable_customkey="4" title="You are a postprodder">🖼️</td>
+			{% elif puzzle.is_spoiled %}
+			<td sorttable_customkey="98" title="You are spoiled">👀</td>
+			{% else %}
+			<td sorttable_customkey="99" title="You are not spoiled">❓</td>
+			{% endif %}
+			<td sorttable_customkey="{{ puzzle.id }}">{% puzzle_link puzzle %}</td>
+			<td sorttable_customkey="{{ puzzle.get_status_rank }}">{{ puzzle.get_status_display }}</td>
+			<td sorttable_customkey="{{ puzzle.status_mtime.timestamp }}">{{ puzzle.status_mtime | naturaltime }}</td>
+			<td>{% user_list puzzle.authors %}</td>
+			<td class="small-md">{{ puzzle.summary|markdown }}</td>
+			<td sorttable_customkey="{{ puzzle.priority }}">{{ puzzle.get_priority_display }}</td>
+			<td>{{ puzzle.editors_count_display }}: {% user_list puzzle.discussion_editors %}</td>
+			<td sorttable_customkey="{{ puzzle.last_updated.timestamp }}" class="timestamp"
+				data-timestamp="{{ puzzle.last_updated.timestamp }}">{{ puzzle.last_updated }}</td>
+			{% if puzzle.last_comment_date %}
+			<td sorttable_customkey="{{ puzzle.last_comment_date.timestamp }}" class="timestamp"
+				data-timestamp="{{ puzzle.last_comment_date.timestamp }}">{{ puzzle.last_comment_date }}</td>
+			{% else %}
 			<td sorttable_customkey="0">—</td>
-		{% endif %}
-	</tr>
-	{% endfor %}
-</table>
+			{% endif %}
+		</tr>
+		{% endfor %}
+	</table>
 </div>
 {% else %}
 <div class="empty">

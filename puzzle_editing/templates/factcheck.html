@@ -19,4 +19,16 @@ Factchecking
 </h2>
 
 {% puzzle_list needs_factchecking request.user %}
+
+<h2>
+	Puzzles that need copy editing
+</h2>
+
+{% puzzle_list needs_copyediting request.user %}
+
+<h2>
+	Puzzles that need copy editing and have a factchecker assigned
+</h2>
+{% puzzle_list needs_copyediting_all request.user %}
+
 {% endblock %}

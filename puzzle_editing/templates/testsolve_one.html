@@ -7,23 +7,32 @@
 {% endblock %}
 {% block main %}
 <h1>
-	Testsolving ({{ session.puzzle }}, Session #{{ session.id }})</p>
+	Testsolving ({% if spoiled %}<a href="{% url 'puzzle' session.puzzle.id %}">{{ session.puzzle }}</a>{% else %}{{ session.puzzle }}{% endif %}, Session #{{ session.id }})</p>
 </h1>
 
 <p>Participants:</p>
 <table class="classic sortable">
-<tr><th>User</th><th>Fun rating</th><th>Difficulty rating</th><th>Done?</th></tr>
+<tr><th>User</th><th>Fun rating</th><th>Difficulty rating</th><th>Hours spent</th><th>Done?</th></tr>
 {% for participation in session.participations.all %}
 <tr>
 	<td>{{ participation.user.username }}</td>
 	<td>{{ participation.fun_rating|default:"n/a" }}</td>
 	<td>{{ participation.difficulty_rating|default:"n/a" }}</td>
+	<td>{{ participation.hours_spent|default_if_none:"n/a" }}</td>
 	<td>{% if participation.ended %}done{% endif %}</td>
 </tr>
 {% endfor %}
 </table>
 
 {% if participation or spoiled %}
+
+<p>Session notes <button type="button" class="toggle-show" data-target="notes-form" data-rehide="Hide editing">Edit</button></p>
+<form method="POST" id="notes-form" class="hidden">
+	{% csrf_token %}
+	{{ notes_form }}
+	<input type="submit" name="edit_notes" value="Submit">
+</form>
+{{ session.notes|markdown }}
 
 {% if participation %}
 
@@ -60,7 +69,7 @@
 	<input type="submit" name="do_guess" value="Guess">
 </form>
 
-<p><a href="{% url 'testsolve_finish' session.id %}">Done with the puzzle?</a> (You can confirm and leave feedback after clicking the link)</p>
+<p><a href="{% url 'testsolve_finish' session.id %}" class="testsolve-finish{% if session.has_correct_guess and not participation.ended %} testsolve-finish-correct{% endif %}">Done with the puzzle?</a> (You can confirm and leave feedback after clicking the link)</p>
 
 {% else %}
 <p>You are spoiled on {{ session.puzzle }}.</p>
@@ -74,7 +83,7 @@ Past guesses:
 		<span class="guess {% if guess.correct %}correct{% else %}incorrect{% endif %}">
 			{{ guess.guess }}
 		</span>
-		<span class="date">guessed by {{ guess.user }} @ {{ guess.date }}</span>
+		<span class="date">guessed by {{ guess.user }} @ <span class="timestamp" data-timestamp="{{ guess.date.timestamp }}">{{ guess.date }}</span></span>
 	</li>
 	{% endfor %}
 </ul>
@@ -87,7 +96,7 @@ Past guesses:
 <div class="empty">(no puzzle yet)</div>
 {% endif %}
 
-{% comment_list session.puzzle session.comments.all comment_form %}
+{% comment_list request.user session.puzzle session.comments.all comment_form False %}
 {% else %}
 <p class="alert">You are neither participating in this testsolving session nor spoiled on the puzzle. Would you like to join this session?</p>
 <form method="POST">

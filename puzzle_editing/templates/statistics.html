@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load puzzle_list %}
+{% load markdown %}
+{% block title %}
+Statistics
+{% endblock %}
+{% block main %}
+<h1>Statistics</h1>
+<div class="flex-row">
+    <div>
+        <h2>Puzzle Status</h2>
+        <table class="classic">
+            <tr>
+                <th>Status</th>
+                <th>Count</th>
+                {% for tag in tags %}
+                <th>[{{tag.name}}]</th>
+                {% endfor %}
+                <th>Others</th>
+            </tr>
+            {% for s in status %}
+            <tr>
+                <td>{{ s.status }}</td>
+                <td>{{ s.count }}</td>
+                {% for tag in tags %}
+                <td>{{ s|get_item:tag.name }}</td>
+                {% endfor %}
+                <td>{{ s.rest_count }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div class="vertical-divider"> </div>
+    <div>
+        <h2>Other Stuff</h2>
+        <table class="classic">
+            <tr>
+                <th>Answers...</th>
+                <th>#</th>
+            </tr>
+            <tr>
+                <td>in need of a puzzle</td>
+                <td>{{answers.waiting}}</td>
+            </tr>
+            <tr>
+                <td>not yet released</td>
+                <td>31</td>
+            </tr>
+            <tr>
+                <th>assigned already</th>
+                <th>{{answers.assigned}}</th>
+            </tr>
+            {% for tag in tags %}
+            <tr>
+                <td>assigned [{{tag.name}}]</td>
+                <td>{{answers|get_item:tag.name}}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td>assigned (the rest)</td>
+                <td>{{answers.rest}}</td>
+            </tr>
+        </table>
+    </div>
+</div>
+<h1 style>Chart!</h1>
+<div style="margin: 20px 50px;">
+    <div style="margin-bottom: 10px;"><a href="?time=alltime">All time</a> <a href="?time=1m">1 Month</a> <a
+            href="?time=2w">2 weeks</a> <a href="?time=1w">1 Week</a> <a href="?time=3d">3 Days</a> <a href="?time=1d">1
+            Day</a> </div>
+    <img src="data:image/png;base64, {{ image_base64 }}" alt="puzzle stats" />
+</div>
+{% endblock %}

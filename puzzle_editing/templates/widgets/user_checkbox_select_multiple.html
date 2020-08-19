@@ -1,0 +1,10 @@
+<div class="user-checkbox-select-multiple"><input type="text" class="user-checkbox-filter" placeholder="Type to filter..." value=""><div></div><ul>
+{% for group, options, index in widget.optgroups %}
+	{% if group %}<li>{{ group }}<ul>{% endif %}
+	{% for option in options %}
+	<li class="user-option">{% include option.template_name with widget=option %}</li>
+	{% endfor %}
+	{% if group %}</ul></li>{% endif %}
+{% endfor %}
+</ul>
+</div>

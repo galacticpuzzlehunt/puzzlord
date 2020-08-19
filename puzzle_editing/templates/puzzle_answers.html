@@ -28,7 +28,7 @@
 <script type="text/javascript">
 	const form = document.getElementById('answers-form');
 	form.addEventListener('submit', (event) => {
-		const checked = form.querySelectorAll('input[type="checkbox"]:checked').length;
+		const checked = form.querySelectorAll('input[type="checkbox"]:not(.ui-only):checked').length;
 		if (checked > 1 && !confirm(`You're trying to assign ${checked} answers to this puzzle; are you sure?`)) {
 			event.preventDefault();
 		}

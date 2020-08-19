@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load puzzle_list %}
+{% load markdown %}
+{% block title %}
+Users
+{% endblock %}
+{% block main %}
+	<h1>Users &times; Statuses</h1>
+	<div class="table-wrap">
+	<table class="classic sortable">
+		<tr>
+			<th>User</th>
+			<th>Role</th>
+			{% for status in statuses %}
+			<th class="small">{{ status }}</th>
+			{% endfor %}
+		</tr>
+		{% for user in users %}
+		<tr>
+			<td><a href="{% url 'user' user.username %}">{{ user.full_display_name }}</a></td>
+			<td>
+				{% if user.is_staff %}
+				Superuser
+				{% elif user.is_meta_editor %}
+				Meta Editor
+				{% endif %}
+			</td>
+			{% for stat in user.stats %}
+			<td>{{ stat }}</td>
+			{% endfor %}
+		</tr>
+		{% endfor %}
+	</table>
+	</div>
+{% endblock %}

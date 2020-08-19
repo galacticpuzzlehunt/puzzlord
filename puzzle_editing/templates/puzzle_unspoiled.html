@@ -8,6 +8,9 @@
 	{{ puzzle.spoiler_free_title }}
 </h1>
 <p>You are not yet spoiled on this puzzle! Do you want to be spoiled on it?</p>
+{% if role %}
+<p><b>You currently have the <i>{{ role }}</i> role on this puzzle, so it's likely that you want to continue.</b></p>
+{% endif %}
 <form method="post">
 	{% csrf_token %}
 	<input type="submit" name="do_spoil" value="Spoil me">

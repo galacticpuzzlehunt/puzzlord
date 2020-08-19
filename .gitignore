@@ -14,6 +14,16 @@
 # pyenv
 .python-version
 
+# Ansible retry files
+/**/*.retry
+/**/*.log
+
+# Ansible deploy keys
+/ansible/files/puzzlord_deploy_key
+
+# Vagrant metadata
+.vagrant
+
 # pid files
 /**/*.pid
 
@@ -25,3 +35,6 @@
 
 # VSCode
 \.vscode/
+
+# uploaded puzzles
+puzzle_postprods/

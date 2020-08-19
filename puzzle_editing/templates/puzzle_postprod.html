@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}
+	{% if spoiled %}{{ puzzle.spoilery_title }}{% else %}{{puzzle.spoiler_free_title}}{%endif%} / Postprodding
+{% endblock %}
+{% block main %}
+<h1>Postprodding {{ puzzle.spoilery_title }}</h1>
+<a href="{% url 'puzzle' puzzle.id %}">🔙 to {{ puzzle }}</a>
+{% if spoiled %}
+<h2>How to postprod a puzzle</h2>
+<p>
+You should make a <code>.zip</code> file that contains the following files:
+<ul>
+    <li><code>index.html</code>, the main file in which your puzzle content resides. Don't include a <code>&lt;head&gt;</code> section or anything, just the puzzle content itself.</li>
+    <li>Any supplementary files your puzzle needs, e.g. <code>crossword_grid.png</code></li>
+    <li><code>solution/index.html</code>, the main file in which your solution content resides. Don't include a <code>&lt;head&gt;</code> section or anything, just the puzzle content itself. Feel free to include author's notes at the bottom of this.</li>
+    <li>Any supplementary files for your solution, in the <code>solution</code> directory, e.g. <code>solution/filled_in_grid.png</code>
+    <li><code>posthunt/index.html</code> and any supporting files, if your puzzle will need to look different after the hunt is over (e.g. it has an interactive or server-based component).</li>
+</ul>
+
+<p><b>More detailled information is available in <a href="https://docs.google.com/document/d/1rf7o5YKcNJT9MK_oB5FuUW8TVksbwqAsElmfJfa0y3M/edit#">the postprodding guide</a>.</b></p>
+
+<h2>Upload your postprodded puzzle</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <table class="classic">
+<tr><th>Title:</th><td>{{puzzle.name}}</td></tr>
+<tr><th>Answer:</th><td>{% with puzzle.answers.all as answers %}{% if answers %}{{ answers|join:", " }}{% else %}<span class="empty">(none)</span>{% endif %}{% endwith %}</td></tr>
+            {{ form.as_table }}
+        </table>
+
+        <input type="submit" value="Submit">
+    </form>
+    {% if puzzle.has_postprod %}
+        <h2>Current postprod</h2>
+       Puzzle postprodded at <span class="timestamp" data-timestamp="{{puzzle.postprod.mtime.timestamp}}">{{puzzle.postprod.mtime}}</span>, file size {{puzzle.postprod.get_size}}. <a href="{% url 'postprod_zip' puzzle.id %}">Download zip file</a>.<br/>
+       Puzzle viewable at <a href="http://FIXME.example.com/{{puzzle.postprod.slug}}/">http://FIXME.example.com/{{puzzle.postprod.slug}}/</a>.
+    {% endif %}
+{% else %}
+    <p>You are not spoiled on this puzzle. I'm not sure you want to be postprodding it.</p>
+    <p>If you really want to, you can click back to it and spoil yourself.</p>
+{% endif %}
+{% endblock %}

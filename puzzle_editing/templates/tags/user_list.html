@@ -1,5 +1,5 @@
 {% if users %}
-{% for user in users %}{% if not forloop.first %}, {% endif %}{% if user.profile__display_name %}<span title="{{ user.username }}">{{ user.profile__display_name }}</span>{% else %}{{ user.username }}{% endif %}{% endfor %}
+{% for user in users %}{% if not forloop.first %}, {% endif %}{% if linkify %}<a href="{% url 'user' user.username %}">{% endif %}{% if user.profile__display_name %}<span title="{{ user.username }}">{{ user.profile__display_name }}</span>{% else %}{{ user.username }}{% endif %}{% if linkify %}</a>{% endif %}{% endfor %}
 {% else %}
 	<span class="empty">(none)</span>
 {% endif %}

@@ -84,7 +84,7 @@
 							<a href="{% url 'puzzle_people' puzzle.id %}" class="edit-link">edit</a>
 						</th>
 						<td>
-							{% user_list puzzle.authors %}
+							{% user_list puzzle.authors linkify=True %}
 						</td>
 					</tr>
 					<tr>
@@ -141,6 +141,16 @@
 		<div>Answers: {% with puzzle.answers.all as answers %}{% if answers %}{{ answers|join:", " }}{% else %}<span class="empty">(none)</span>{% endif %}{% endwith %}
 			(<a href="{% url 'puzzle_answers' puzzle.id %}">edit</a>)
 		</div>
+		<div>Tags:
+			{% with puzzle.tags.all as tags %}
+				{% if tags %}
+				{% for tag in tags %}{% if not forloop.first %}, {% endif %}{{ tag.name }}{% endfor %}
+				{% else %}
+					<span class="empty">(none)</span>
+				{% endif %}
+			{% endwith %}
+			(<a href="{% url 'puzzle_tags' puzzle.id %}">edit</a>)
+		</div>
 
 		<h2>Summary/Description <a href="{% url 'puzzle_edit' puzzle.id %}" class="edit-link">Edit</a></h2>
 		<table class="puzzle-table puzzle-info">
@@ -155,6 +165,7 @@
 			{{ content_form }}
 			<input type="submit" name="edit_content" value="Submit">
 		</form>
+		{% if puzzle.has_postprod %}<b>Since the puzzle has been postprodded, <a href="https://FIXME.example.com/{{puzzle.postprod.slug}}/">the postprodded puzzle</a> should be used rather than this field.</b>{% endif %}
 		{% if puzzle.content %}
 		{{ puzzle.content|markdown }}
 		{% else %}
@@ -166,15 +177,84 @@
 			{{ solution_form }}
 			<input type="submit" name="edit_solution" value="Submit">
 		</form>
+		{% if puzzle.has_postprod %}<b>Since the puzzle has been postprodded, <a href="https://FIXME.example.com/{{puzzle.postprod.slug}}/solution/">the postprodded solution</a> should be used rather than this field.</b>{% endif %}
 		{% if puzzle.solution %}
 		{{ puzzle.solution|markdown }}
 		{% else %}
-		<div class="empty">(no puzzle yet)</div>
+		<div class="empty">(no solution yet)</div>
+		{% endif %}
+		<h2>Postprod</h2>
+		{% if puzzle.has_postprod %}
+		Puzzle postprodded at <span class="timestamp" data-timestamp="{{puzzle.postprod.mtime.timestamp}}">{{puzzle.postprod.mtime}}</span>, file size {{puzzle.postprod.get_size}}. <a href="{% url 'postprod_zip' puzzle.id %}">Download zip file</a>.<br>
+		Puzzle viewable at <a href="https://FIXME.example.com/{{puzzle.postprod.slug}}/">https://FIXME.example.com/{{puzzle.postprod.slug}}/</a>. It may take a few mintues to update after uploading here.
+		<a href="{% url 'puzzle_postprod' puzzle.id %}">Upload a new version</a>
+		{% else %}
+		<div class="empty">(no postprod uploaded yet -
+		<a href="{% url 'puzzle_postprod' puzzle.id %}">upload one now</a>)</div>
+		{% endif %}
+		<h2>Testsolve Sessions</h2>
+		{% if testsolve_sessions %}
+		<!-- this has fewer columns than the usual table -->
+		<div class="table-wrap">
+		<table class="classic sortable">
+			<tr>
+				<th>Session</th>
+				<th>Participants</th>
+				<th>Correct Guess</th>
+				<th>Ended</th>
+				<th>Avg Diff</th>
+				<th>Avg Fun</th>
+				<th>Avg Hours</th>
+				<th>Notes</th>
+			</tr>
+			{% for session in testsolve_sessions %}
+				{% with session.puzzle as puzzle %}
+				<tr>
+					<td sorttable_customkey="{{ session.id }}"><a href="{% url 'testsolve_one' session.id %}">Session {{ session.id }}</a></td>
+					<td>{% user_list session.participants %}</td>
+                    <td>{% if session.has_correct_guess %}✅{% endif %}</td>
+                    <td>{{ session.get_done_participants_display }}</td>
+                    <td>{{ session.get_average_diff | floatformat }}</td>
+                    <td>{{ session.get_average_fun | floatformat }}</td>
+                    <td>{{ session.get_average_hours | floatformat }}</td>
+					<td class="small-md">{{ session.notes|markdown }}</td>
+				</tr>
+				{% endwith %}
+			{% endfor %}
+		</table>
+		</div>
+		{% else %}
+		<div class="empty">(no testsolve sessions yet)</div>
 		{% endif %}
 
-		{% comment_list puzzle comments comment_form %}
+		{% comment_list request.user puzzle comments comment_form True %}
 		</main>
 	</div>
 </div>
 
+{% endblock %}
+
+{% block extrajs %}
+{% if enable_keyboard_shortcuts %}
+<script>
+document.onkeydown=nextpage;
+function nextpage(e){
+	var event = document.all ? window.event : e;
+	if (!/^(?:input|textarea|select|button)$/i.test(e.target.tagName)) {
+		// on press "j", go to the next puzzle unread
+		if (event.keyCode == 74)  {% if next_unread_puzzle_id %}location="{% url 'puzzle' next_unread_puzzle_id %}"; {% else %}alert("You have no more unread spoiled puzzles.");{% endif%}
+
+		// on press "h", go home
+		if (event.keyCode == 72)  location="{% url 'index' %}";
+
+		// on press "m", scroll to the bottom of the page
+		if (event.keyCode == 77) window.scrollTo(0,document.body.scrollHeight);
+		// on press "n", scroll to the top of the page
+		if (event.keyCode == 78) window.scrollTo(0,0);
+		// on press "?", show help
+		if (event.keyCode == 191) alert("'j' to go to your next unread puzzle. 'm'/'n' to go to the bottom/top of the page. 'h' for home.");
+	}
+}
+</script>
+{% endif %}
 {% endblock %}

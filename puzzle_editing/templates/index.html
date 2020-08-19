@@ -3,11 +3,20 @@
 {% load testsolve_session_list %}
 {% block main %}
 	<h1>Welcome to Puzzlord!</h1>
+	{% if inbox_puzzles %}
+	<h2>Unread spoiled puzzles</h2>
+	{% puzzle_list inbox_puzzles request.user %}
+	</h2>
+	{% endif %}
 
 	<h2>Puzzles blocked on your author attention <a href="{% url 'authored' %}">(see all of your puzzles)</a></h2>
 	{% puzzle_list_with_new_link blocked_on_author_puzzles request.user %}
+	{% if blocked_on_editor_puzzles %}
+		<h2>Puzzles blocked on your editor attention <a href="{% url 'authored' %}">(see all of your puzzles)</a></h2>
+		{% puzzle_list_with_new_link blocked_on_editor_puzzles request.user %}
+	{% endif %}
 	<h2>Testsolving sessions you are in</h2>
-	{% testsolve_session_list current_sessions %}
+	{% testsolve_session_list current_sessions True True %}
 	<h2>Puzzles you are factchecking</h2>
 	{% puzzle_list factchecking request.user %}
 	<h2>Puzzles you are postprodding</h2>

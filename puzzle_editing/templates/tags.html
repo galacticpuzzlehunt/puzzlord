@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load puzzle_list %}
+{% load markdown %}
+{% block title %}
+Tags
+{% endblock %}
+{% block main %}
+	<h1>Tags</h1>
+	<a href="{% url 'new_tag' %}">New tag</a>
+	<div class="table-wrap">
+	<table class="classic sortable">
+		<tr>
+			<th>Name</th>
+			<th>Puzzle #</th>
+			<th>Description</th>
+		</tr>
+		{% for tag in tags %}
+		<tr>
+			<td><a href="{% url 'single_tag' tag.id %}">{{ tag.name }}</a></td>
+			<td>{{ tag.count }}</td>
+			<td>{{ tag.description|markdown }}</td>
+		</tr>
+		{% endfor %}
+	</table>
+{% endblock %}

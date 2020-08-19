@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}
+Edit Round {{ round.name }}
+{% endblock %}
+{% block main %}
+	<h1>Edit Round {{ round.name }}</h1>
+	<a href="{% url 'rounds' %}">Back to rounds</a>
+	<form method="post">
+		{% csrf_token %}
+		{{ form.non_field_errors }}
+		<table class="classic">
+			{{ form.as_table }}
+		</table>
+		<input type="submit" value="Submit">
+	</form>
+	<h2>Delete round</h2>
+	<form method="post">
+		{% if has_answers %}Remove all this round's answers in order to delete it.{% else %}
+		<input type="checkbox" name="sure-delete" class="sure-delete" id="sure-delete"><label for="sure-delete">I want to delete the {{round.name}} round.</label><br>
+		<input type="submit" name="delete" value="Delete round" class="delete-round-button">
+		{% endif %}
+	</form>
+{% endblock %}

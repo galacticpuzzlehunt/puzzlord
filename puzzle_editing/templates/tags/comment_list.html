@@ -19,7 +19,8 @@
 			{% user_display comment.author %}
 			<div class="date">@ <span class="timestamp" data-timestamp="{{ comment.date.timestamp }}">{{ comment.date }}</span></div>
 			{% if comment.is_system %} (system){% endif %}
-			{% if comment.testsolve_session %} (testsolve session {{ comment.testsolve_session.id }}){% endif %}
+			{% if show_testsolve_session_links and comment.testsolve_session %} (<a href="{% url "testsolve_one" comment.testsolve_session.id %}">testsolve session {{ comment.testsolve_session.id }}</a>){% endif %}
+			{% if comment.author.is_current_user and not comment.is_system %}(<a href="{% url "edit_comment" comment.id %}">edit</a>){% endif %}
 		</td>
 		{% endwith %}
 		<td>{{ comment.content|markdown }}</td>

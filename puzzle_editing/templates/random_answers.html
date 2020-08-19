@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load puzzle_list %}
+{% load markdown %}
+{% block title %}
+Random Answers
+{% endblock %}
+{% block main %}
+    <h1>See Random Answers</h1>
+    <p>Here are {{answers.length}} random available answers for your perusal. Feel free to make a puzzle called "answer request" and specify that you want to be assigned a specific answer to work from.</p>
+    <input type="checkbox" class="unhide" id="unhide"><label for="unhide">Unhide all</label>
+    <table>
+        {% for answer in answers %}
+        <tr><th>Answer (hover over to reveal):</th><td class="answerspoiler">{{answer}}</td></tr>
+        {% endfor %}
+    </table>
+    <p>Refresh if you want to see more choices. If you're looking for an answer for a particular concept, you should talk to an editor and have them help you find the best answer, because some of the answers can be changed to accomodate, and so that you don't end up spoiled on too many answers for testsolving.</p>
+<style>
+    .answerspoiler {
+        color: black;
+        background-color: black;
+        padding: 3px;
+        border: 1px solid #777;
+    }
+    .answerspoiler:hover, .unhide:checked + label + table .answerspoiler  {
+        color:white;
+        background-color: #333;
+        border: 1px dashed #777;
+    }
+    table {
+        border-spacing: 5px 20px;
+    }
+</style>
+{% endblock %}

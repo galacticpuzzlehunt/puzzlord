@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}
+Bulk Add Answers to {{ round.name }}
+{% endblock %}
+{% block main %}
+	<h1>Bulk Add Answers to {{ round.name }}</h1>
+	<a href="{% url 'rounds' %}">Back to rounds</a>
+	<p>
+	Current answers:
+	{% if round.answers %}
+	<ul>
+		{% for answer in round.answers.all %}
+		<li>{{ answer.answer }}</li>
+		{% endfor %}
+	</ul>
+	{% else %}
+	None!
+	{% endif %}
+	</p>
+	<p>Enter answers one per line (notes not yet supported):</p>
+	<form method="post">
+		{% csrf_token %}
+		<textarea name="bulk_add_answers" cols="40" rows="10"></textarea>
+		<div>
+		<input type="submit" value="Bulk add">
+		</div>
+	</form>
+{% endblock %}

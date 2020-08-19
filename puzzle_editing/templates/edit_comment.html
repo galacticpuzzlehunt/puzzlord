@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}
+Edit Comment {{ comment.id }}
+{% endblock %}
+{% block main %}
+	<h1>Edit Comment {{ comment.id }}</h1>
+	{% if not_author %}
+		This is not your comment! You are not allowed to edit it.
+	{% elif is_system %}
+		You can't edit system comments!
+	{% else %}
+
+	{% if comment.testsolve_session %}
+		<a href="{% url 'testsolve_one' comment.testsolve_session.id %}">Back to {{ comment.testsolve_session }}</a>
+	{% else %}
+		<a href="{% url 'puzzle' comment.puzzle.id %}">Back to {{ comment.puzzle }}</a>
+	{% endif %}
+
+	<form method="post">
+		{% csrf_token %}
+		{{ form.non_field_errors }}
+		<table class="classic">
+			{{ form.as_table }}
+		</table>
+		<input type="submit" value="Submit">
+	</form>
+	{% endif %}
+{% endblock %}

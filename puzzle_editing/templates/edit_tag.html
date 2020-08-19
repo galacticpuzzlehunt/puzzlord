@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load puzzle_list %}
+{% load markdown %}
+{% block title %}
+Edit Tag {{ tag.name }}
+{% endblock %}
+{% block main %}
+	<h1>Edit Tag {{ tag.name }}</h1>
+	<a href="{% url 'single_tag' tag.id %}">Back to tag</a>
+	<form method="post">
+		{% csrf_token %}
+		{{ form.non_field_errors }}
+		<table class="classic">
+			{{ form.as_table }}
+		</table>
+		<input type="submit" value="Submit">
+	</form>
+{% endblock %}

@@ -1,0 +1,6 @@
+<p>
+{{ user }} put puzzle {{ puzzle.spoiler_free_title }} into {{ status }}.
+</p>
+<p>
+Puzzle: {{ request.scheme }}://{{ request.get_host }}{% url 'puzzle' puzzle.id %}
+</p>

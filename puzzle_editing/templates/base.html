@@ -22,11 +22,13 @@
 				{% nav_link current_path 'factcheck' 'Factcheck' %}
 				{% nav_link current_path 'postprod' 'Postprod' %}
 				{% nav_link current_path 'all' 'All Puzzles' %}
-				{% nav_link current_path 'needs_editor' 'Needs Editor' %}
 				{% if perms.puzzle_editing.change_round %}
+				{% nav_link current_path 'awaiting_editor' 'Awaiting Editor' %}
 				{% nav_link current_path 'rounds' 'Rounds/Answers' %}
 				{% endif %}
 				{% nav_link current_path 'users' 'Users' %}
+				{% nav_link current_path 'tags' 'Tags' %}
+				{% nav_link current_path 'statistics' 'Statistics' %}
 				<button id="menu-button" type="button" class="menu-button">&#9776;</button>
 			</div>
 			{% endwith %}
@@ -44,11 +46,11 @@
 				</select>
 				<div class="nav-login">
 				{% if request.user.is_authenticated %}
-				Logged in as <a href="/account">{{ request.user.username }}</a>
-				(<a href="/logout">Logout</a>)
+				Logged in as <a href="{% url 'account' %}">{{ request.user.username }}</a>
+				(<a href="{% url 'logout' %}">Logout</a>)
 				{% else %}
-				<a href="/login">Login</a> or
-				<a href="/register">Register</a>
+				<a href="{% url 'login' %}">Login</a> or
+				<a href="{% url 'register' %}">Register</a>
 				{% endif %}
 				</div>
 			</div>
@@ -133,8 +135,47 @@
 				});
 			});
 
+			document.querySelectorAll('.user-checkbox-select-multiple').forEach((node) => {
+				const textbox = node.firstChild;
+				const display = textbox.nextSibling;
+				const list = display.nextSibling;
+
+				textbox.value = "";
+
+				const handler = () => {
+					let query = textbox.value.toLowerCase();
+					let total = 0;
+					let shown = 0;
+					list.querySelectorAll('.user-option').forEach((node) => {
+						total++;
+						if (node.textContent.toLowerCase().indexOf(query) !== -1) {
+							shown++;
+							node.classList.remove('hidden');
+						} else {
+							node.classList.add('hidden');
+						}
+					});
+					if (shown === total) {
+						display.textContent = "";
+					} else {
+						display.textContent = `Showing ${shown} of ${total}`;
+					}
+				};
+
+				textbox.addEventListener('change', handler);
+				textbox.addEventListener('keyup', handler);
+			});
+
+			// This is hacky but I couldn't figure out how to do it in the markdown engine
+			var links = document.links;
+
+			for (var i = 0, linksLength = links.length; i < linksLength; i++) {
+			if (links[i].hostname != window.location.hostname) {
+				links[i].target = '_blank';
+			}
+			}
 		</script>
-		<script src="/static/sorttable.js"></script>
+		<script src="{% static 'sorttable.js' %}"></script>
 		{% block extrajs %}{% endblock %}
 	</body>
 </html>

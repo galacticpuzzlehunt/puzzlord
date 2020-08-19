@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load markdown %}
+{% load puzzle_list %}
+{% block title %}
+Tag: {{ tag.name }}
+{% endblock %}
+{% block main %}
+<a href="{% url 'tags' %}">Back to all tags</a>
+<h1>Tag: {{ tag.name }}</h1>
+<div>
+	<a href="{% url 'edit_tag' tag.id %}">Edit this tag</a>
+</div>
+{{ tag.description|markdown }}
+
+<h2>{{ count_label }} tagged with {{ tag.name }}</h2>
+{% puzzle_list tag.puzzles request.user %}
+{% endblock %}

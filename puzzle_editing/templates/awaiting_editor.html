@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load puzzle_list %}
+{% block title %}
+Awaiting Editor
+{% endblock %}
+{% block main %}
+<h1>Awaiting Editor</h1>
+
+<h2>Puzzles marked as Awaiting Editor</h2>
+
+{% puzzle_list puzzles request.user %}
+{% endblock %}

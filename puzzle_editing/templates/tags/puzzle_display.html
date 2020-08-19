@@ -1,0 +1,5 @@
+{{ puzzle.id }}:
+{% for tag in puzzle.important_tag_names %}
+	<sup>[{{ tag }}]</sup>
+{% endfor %}
+{{ puzzle.spoiler_free_name }}

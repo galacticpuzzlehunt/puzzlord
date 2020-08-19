@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load puzzle_list %}
+{% load markdown %}
+{% block title %}
+New Tag
+{% endblock %}
+{% block main %}
+	<h1>New Tag</h1>
+	<form method="post">
+		{% csrf_token %}
+		{{ form.non_field_errors }}
+		<table class="classic">
+			{{ form.as_table }}
+		</table>
+		<input type="submit" value="Submit">
+	</form>
+{% endblock %}

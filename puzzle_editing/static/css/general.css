@@ -6,6 +6,7 @@
 	--text-color: black;
 	--deemphasized-color: #777;
 	--correct-color: #080;
+	--error-color: #900;
 	--secondary-bg: #f2f2f2;
 	--tertiary-bg: #e2e2e2;
 	--link-color: #00e;
@@ -31,6 +32,7 @@
 	--text-color: #ddd;
 	--deemphasized-color: #888;
 	--correct-color: #8e8;
+	--error-color: #d33;
 	--secondary-bg: #1f1f1f;
 	--tertiary-bg: #292929;
 	--link-color: #ace;
@@ -51,6 +53,7 @@
 	--text-color: #000;
 	--deemphasized-color: #777;
 	--correct-color: #080;
+	--error-color: #b00;
 	--secondary-bg: #f2f2f2;
 	--tertiary-bg: #ddd;
 	--link-color: #258;
@@ -68,6 +71,7 @@
 	--text-color: #e8e8d3;
 	--deemphasized-color: #606060;
 	--correct-color: #65c254;
+	--error-color: #cf6a4c;
 	--secondary-bg: #1f1f1f;
 	--tertiary-bg: #384048;
 	--link-color: #80a0ff;
@@ -88,6 +92,7 @@
 	--text-color: #839496;
 	--deemphasized-color: #586375;
 	--correct-color: #859900;
+	--error-color: #dc322f;
 	--secondary-bg: #073642;
 	--tertiary-bg: #114550;
 	--link-color: #268bd2;
@@ -110,6 +115,7 @@
 	--text-color: #000;
 	--deemphasized-color: #777;
 	--correct-color: #080;
+	--error-color: #b11;
 	--secondary-bg: #f2eaea;
 	--tertiary-bg: #eae0e0;
 	--link-color: #a00;
@@ -179,7 +185,6 @@ nav a:visited {
 .menu-button {
 	background-color: var(--nav-bg);
 	color: var(--nav-color);
-	text-direction: none;
 	border-width: 0;
 	position: absolute;
 	top: 0;
@@ -190,7 +195,6 @@ nav a:visited {
 .menu-button:hover {
 	background-color: var(--nav-bg);
 	color: var(--nav-color);
-	text-direction: none;
 	border-width: 0;
 	background-color: var(--nav-bg-hover);
 }
@@ -256,11 +260,22 @@ div.table-wrap {
 }
 table.classic {
 	border-collapse: collapse;
+	overflow-wrap: break-word;
 }
-table.classic th {
+table.classic th, table.compact th {
 	padding: 0.5em;
 	background-color: var(--secondary-bg);
 }
+table.classic th.small {
+    font-size: 85%;
+}
+table.compact th {
+	text-align: left;
+	font-weight: normal;
+}
+table.compact th :first-child { margin-top: 0; }
+table.compact tr > td:first-child { padding-left: 2em; }
+table.compact th :last-child { margin-bottom: 0; }
 td.label-cell {
 	max-width: 24em;
 }
@@ -276,6 +291,7 @@ td.label-cell label {
 table.classic td {
 	padding: 0.5em;
 	border-top: 1px solid var(--border-color);
+	max-width: 30em;
 }
 .warning {
 	font-weight: bold;
@@ -366,7 +382,22 @@ table.puzzle-table td p, table.puzzle-table td pre {
 .by-author { background-color: var(--by-author-color); }
 .testsolve { background-color: var(--testsolve-color); }
 
+/* statistics */
+.flex-row {
+	display: flex;
+}
+.vertical-divider {
+	width: 50px;
+}
 /* testsolving */
+.testsolve-finish {
+    font-size: 120%;
+}
+.testsolve-finish-correct {
+	font-weight: bold;
+	border: 0.25em solid var(--correct-color);
+	padding: 0.25em;
+}
 .guess.correct {
 	font-weight: bold;
 	color: var(--correct-color);
@@ -386,11 +417,28 @@ table.puzzle-table td p, table.puzzle-table td pre {
 	display: none;
 }
 
-.hide-dead:checked + label + input + label + div > table tr.dead {
+.hide-dead:checked + label + input + label + input + label + div > table tr.dead {
 	display: none;
 }
-.hide-deferred:checked + label + div > table tr.deferred {
+.hide-deferred:checked + label + input + label + div > table tr.deferred {
 	display: none;
+}
+.hide-visited:checked + label + div > table tr.puzzle-row:not(.unvisited) {
+	display: none;
+}
+.unvisited .puzzle-link {
+	font-weight: bold;
+	position: relative;
+}
+.unvisited .puzzle-link::before {
+	position: absolute;
+	left: -0.8em;
+	width: 0.6em;
+	height: 0.6em;
+	border-radius: 0.3em;
+	background-color: var(--error-color);
+	content: " ";
+	display: block;
 }
 .hide-assignments:checked ~ div > table .assignment-spoiler {
 	display: none;
@@ -398,12 +446,29 @@ table.puzzle-table td p, table.puzzle-table td pre {
 .hide-assignments:not(:checked) ~ div > table .assignment-unspoiler {
 	display: none;
 }
-.hide-test-authored:checked + label + div > table tr.test-authored {
+.hide-delete-answer:checked ~ div > table .delete-answer-button {
 	display: none;
 }
+.hide-assignments:not(:checked) ~ div > table .assignment-unspoiler {
+	display: none;
+}
+.hide-test-authored:checked + label + input + label + div > table tr.test-authored {
+	display: none;
+}
+.hide-test-spoiled:checked + label + div > table tr.test-spoiled {
+	display: none;
+}
+.show-delete-answer:checked ~
 .deemph {
 	color: var(--deemphasized-color);
 	font-size: 80%;
+}
+
+.assigned-to-other {
+	color: var(--deemphasized-color);
+}
+.hide-assigned-to-other:checked + label + table tr.assigned-to-other {
+	display: none;
 }
 
 .markdown-textarea {
@@ -419,4 +484,36 @@ table.puzzle-table td p, table.puzzle-table td pre {
 .success {
     font-size: 200%;
 	color: var(--correct-color);
+}
+
+.user-checkbox-select-multiple {
+	border: 1px solid var(--border-color);
+	background-color: var(--input-bg);
+	border-radius: 3px;
+	max-height: 20em;
+	overflow-y: auto;
+	padding: 0.5em;
+}
+.user-checkbox-select-multiple ul {
+	padding-left: 1.5em;
+}
+
+/* edit round */
+.sure-delete:checked + label + br + input.delete-round-button {
+	display: block !important;
+}
+.delete-round-button {
+	display: none;
+}
+
+/* spoiled */
+.testsessions {
+	display: flex;
+	flex-direction: column;
+}
+
+/* django */
+.errorlist {
+	color: var(--error-color);
+	font-weight: bold;
 }

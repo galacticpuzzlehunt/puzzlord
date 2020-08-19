@@ -1,9 +1,11 @@
 from django import template
+
 from puzzle_editing.models import UserProfile
 
 register = template.Library()
 
-@register.inclusion_tag('tags/user_display.html')
+
+@register.inclusion_tag("tags/user_display.html")
 def user_display(user):
     """Display a user"""
 
@@ -13,4 +15,4 @@ def user_display(user):
     except UserProfile.DoesNotExist:
         pass
 
-    return {'user': user}
+    return {"user": user}

@@ -1,0 +1,34 @@
+{% load markdown %}
+<div class="answer-checkbox-select-multiple">
+<input id="hide-assigned-to-other" type="checkbox" class="hide-assigned-to-other ui-only" checked> <label for="hide-assigned-to-other">Hide answers assigned to other puzzles</label>
+<!-- TODO is this slow? are we comparing rounds by equality? -->
+{% regroup options by instance.round as round_groups %}
+<table class="compact">
+{% for round_group in round_groups %}
+	<tr>
+		<th colspan="3" class="soft">
+			<h2>{{ round_group.grouper.name }}</h2>
+			{{ round_group.grouper.description|markdown }}
+		</th>
+	</tr>
+	{% for option in round_group.list %}
+	<tr class="{% if option.instance.other_puzzle_count %}assigned-to-other{% endif %}">
+	<td>{% include option.template_name with widget=option %}</td>
+	<td>
+		{% with option.instance.other_puzzle_count as opc %}
+		{% if opc == 1 %}
+		assigned to 1 other puzzle
+		{% elif opc %}
+		assigned to {{ opc }} other puzzles
+		{% endif %}
+		{% endwith %}
+	</td>
+	<td class="small-md">
+		{{ option.instance.notes|markdown }}
+	</td>
+	</tr>
+	{% endfor %}
+{% endfor %}
+</table>
+
+</div>

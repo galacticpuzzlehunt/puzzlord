@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% load puzzle_list %}
+{% load puzzle_link %}
+{% load puzzle_display %}
 {% load testsolve_session_list %}
 {% load user_list %}
+{% load humanize %}
 {% load markdown %}
 {% block title %}
 Testsolving
@@ -12,60 +15,57 @@ Testsolving
 </h1>
 <h2>Testsolving sessions you are in</h2>
 
-{% testsolve_session_list current_sessions %}
+{% testsolve_session_list current_sessions True True %}
 
 <h2>Testsolving sessions you can join</h2>
 
-{% testsolve_session_list joinable_sessions %}
+{% testsolve_session_list joinable_sessions False False %}
 
 <h2>Puzzles you can testsolve</h2>
 
 {% if testsolvable %}
 <form method="POST">
-{% csrf_token %}
-<input id="hide-test-authored" type="checkbox" class="hide-test-authored" checked> <label for="hide-test-authored">Hide your puzzles</label>
-<div class="table-wrap">
-<table class="classic">
-	<tr>
-		<th></th>
-		<th>ID/Name</th>
-		<th>Status</th>
-		<th>Authors</th>
-		<th>Summary</th>
-		<th>Priority</th>
-	</tr>
-	{% for puzzle_data in testsolvable %}
-	{% with puzzle_data.puzzle as puzzle %}
-	<tr
-		{% if puzzle.is_author %}
-		class="test-authored"
-		{% endif %}
-	>
-		<td>
-			<button
-				type="submit"
-				name="start_session"
-				value="{{ puzzle.id }}"
-				{% if puzzle_data.warning %}
-				data-warning="{{ puzzle_data.warning }}"
-				{% endif %}
-			>
-				Start new session
-			</button>
-			{% if puzzle_data.warning %}
-			<div>({{ puzzle_data.warning }}!)</div>
-			{% endif %}
-		</td>
-		<td>{{ puzzle.id }}: {{ puzzle.spoiler_free_name }}</td>
-		<td>{{ puzzle.get_status_display }}</td>
-		<td>{% user_list puzzle.authors %}</td>
-		<td class="small-md">{{ puzzle.summary|markdown }}</td>
-		<td>{{ puzzle.get_priority_display }}</td>
-	</tr>
-	{% endwith %}
-	{% endfor %}
-</table>
-</div>
+	{% csrf_token %}
+	<input id="hide-test-authored" type="checkbox" class="hide-test-authored" checked> <label
+		for="hide-test-authored">Hide your puzzles</label>
+	<input id="hide-test-spoiled" type="checkbox" class="hide-test-spoiled"> <label for="hide-test-spoiled">Hide
+		spoiled</label>
+	<div class="table-wrap">
+		<table class="classic">
+			<tr>
+				<th></th>
+				<th>ID/Name</th>
+				<th>Summary</th>
+				<th>Authors</th>
+				<th>Editors</th>
+				<th>Priority</th>
+				<th>When Entered Testsolving</th>
+			</tr>
+			{% for puzzle_data in testsolvable %}
+			{% with puzzle_data.puzzle as puzzle %}
+			<tr
+				class="{% if puzzle.is_author %}test-authored{% endif %} {% if puzzle.is_spoiled %}test-spoiled{% endif %}">
+				<td>
+					<button type="submit" name="start_session" value="{{ puzzle.id }}" {% if puzzle_data.warning %}
+						data-warning="{{ puzzle_data.warning }}" {% endif %}>
+						Start new session
+					</button>
+					{% if puzzle_data.warning %}
+					<div>({{ puzzle_data.warning }}!)</div>
+					{% endif %}
+				</td>
+				<td>{% if puzzle.is_spoiled %}{% puzzle_link puzzle %}{% else %}{% puzzle_display puzzle %}{% endif %}
+				</td>
+				<td class="small-md">{{ puzzle.summary|markdown }}</td>
+				<td>{% user_list puzzle.authors %}</td>
+				<td>{% user_list puzzle.discussion_editors %}</td>
+				<td>{{ puzzle.get_priority_display }}</td>
+				<td>{{ puzzle.status_mtime | naturaltime }}</td>
+			</tr>
+			{% endwith %}
+			{% endfor %}
+		</table>
+	</div>
 </form>
 {% else %}
 <div class="empty">No puzzles to list</div>
@@ -73,7 +73,39 @@ Testsolving
 
 <h2>Your past testsolving sessions</h2>
 
-{% testsolve_session_list past_sessions %}
+{% if past_sessions %}
+<div class="table-wrap">
+	<table class="classic sortable">
+		<tr>
+			<th>Session</th>
+			<th>Puzzle</th>
+			<th>Summary</th>
+			<th>Puzzle Priority</th>
+			<th>Participants</th>
+			<th>Notes</th>
+			<th>Fun</th>
+			<th>Diff.</th>
+		</tr>
+		{% for session in past_sessions %}
+		{% with session.puzzle as puzzle %}
+		<tr>
+			<td sorttable_customkey="{{ session.id }}"><a href="{% url 'testsolve_one' session.id %}">Session
+					{{ session.id }}</a></td>
+			<td sorttable_customkey="{{ puzzle.id }}">{% puzzle_display puzzle %}</td>
+			<td class="small-md">{{ puzzle.summary|markdown }}</td>
+			<td sorttable_customkey="{{ puzzle.priority }}">{{ puzzle.get_priority_display }}</td>
+			<td>{% user_list session.participants %}</td>
+			<td class="small-md">{{ session.notes|markdown }}</td>
+			<td>{{ session.fun_rating|default:"n/a" }}</td>
+			<td>{{ session.difficulty_rating|default:"n/a" }}</td>
+		</tr>
+		{% endwith %}
+		{% endfor %}
+	</table>
+</div>
+{% else %}
+<div class="empty">No sessions to list</div>
+{% endif %}
 
 {% endblock %}
 

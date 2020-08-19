@@ -4,20 +4,30 @@
 #
 #    pip-compile
 #
-asgiref==3.2.3            # via django
-bleach==3.1.0
+bleach==3.1.0             # via -r requirements.in
 click==7.0                # via pip-tools
-django==3.0.2
-gevent==1.4.0
+cycler==0.10.0            # via matplotlib
+django==2.2.4             # via -r requirements.in
+gevent==1.4.0             # via -r requirements.in
+gitdb==4.0.5              # via gitpython
+gitpython==3.1.3          # via -r requirements.in
 greenlet==0.4.15          # via gevent
-gunicorn==20.0.4
-markdown==3.1.1
-newrelic==5.4.1.134
-pip-tools==4.4.0
-pytz==2019.3              # via django
-six==1.14.0               # via bleach, pip-tools
+gunicorn==19.9.0          # via -r requirements.in
+kiwisolver==1.2.0         # via matplotlib
+markdown==3.1.1           # via -r requirements.in
+matplotlib==3.3.0         # via -r requirements.in
+newrelic==4.20.1.121      # via -r requirements.in
+numpy==1.19.1             # via -r requirements.in, matplotlib
+pillow==7.2.0             # via matplotlib
+pip-tools==5.2.0          # via -r requirements.in
+pyparsing==2.4.7          # via matplotlib
+python-dateutil==2.8.1    # via matplotlib
+pytz==2019.2              # via django
+six==1.12.0               # via bleach, cycler, pip-tools, python-dateutil
+smmap==3.0.4              # via gitdb
 sqlparse==0.3.0           # via django
 webencodings==0.5.1       # via bleach
 
 # The following packages are considered to be unsafe in a requirements file:
+# pip
 # setuptools

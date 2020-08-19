@@ -15,11 +15,11 @@ Testsolving
 </h1>
 <h2>Testsolving sessions you are in</h2>
 
-{% testsolve_session_list current_sessions True True %}
+{% testsolve_session_list current_sessions request.user True True %}
 
 <h2>Testsolving sessions you can join</h2>
 
-{% testsolve_session_list joinable_sessions False False %}
+{% testsolve_session_list joinable_sessions request.user False False %}
 
 <h2>Puzzles you can testsolve</h2>
 

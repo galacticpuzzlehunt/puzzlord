@@ -646,7 +646,11 @@ class AnswerCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
     def create_option(self, name, value, *args, **kwargs):
         option = super().create_option(name, value, *args, **kwargs)
         if value:
-            option["instance"] = self.choices.queryset.get(pk=value)  # get instance
+            # option["instance"] = self.choices.queryset.get(pk=value)  # get instance
+            # Django 3.1 breaking change! value used to be the primary key or
+            # something but now it's
+            # https://docs.djangoproject.com/en/3.1/ref/forms/fields/#django.forms.ModelChoiceIteratorValue
+            option["instance"] = value.instance
         return option
 
     # smuggle extra stuff through to the template

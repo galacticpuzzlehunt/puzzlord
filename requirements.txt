@@ -4,7 +4,7 @@
 #
 #    pip-compile
 #
-bleach==3.1.0             # via -r requirements.in
+bleach==3.1.4             # via -r requirements.in
 click==7.0                # via pip-tools
 cycler==0.10.0            # via matplotlib
 django==2.2.4             # via -r requirements.in

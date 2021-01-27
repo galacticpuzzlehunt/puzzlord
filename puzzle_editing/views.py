@@ -9,6 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.db.models import Avg
 from django.db.models import Count
 from django.db.models import Exists
 from django.db.models import F
@@ -22,6 +23,7 @@ from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
 from django.shortcuts import render
 from django.template.loader import render_to_string
+from django.utils.html import mark_safe
 from django.views.decorators.csrf import csrf_exempt
 from django.views.static import serve
 
@@ -31,6 +33,7 @@ import puzzle_editing.utils as utils
 import puzzlord.settings as settings
 from puzzle_editing.graph import curr_puzzle_graph_b64
 from puzzle_editing.models import get_user_role
+from puzzle_editing.models import Hint
 from puzzle_editing.models import is_author_on
 from puzzle_editing.models import is_discussion_editor_on
 from puzzle_editing.models import is_factchecker_on
@@ -443,7 +446,16 @@ class PuzzlePostprodForm(forms.ModelForm):
         return zip_file
 
 
-def add_comment(request, puzzle, author, is_system, content, testsolve_session=None):
+class PuzzleHintForm(forms.ModelForm):
+    class Meta:
+        model = Hint
+        exclude = []
+        widgets = {"puzzle": forms.HiddenInput(), "content": forms.Textarea()}
+
+
+def add_comment(
+    request, puzzle, author, is_system, content, testsolve_session=None, send_email=True
+):
     comment = PuzzleComment(
         puzzle=puzzle,
         author=author,
@@ -462,19 +474,20 @@ def add_comment(request, puzzle, author, is_system, content, testsolve_session=N
         subject = "New comment on {}".format(puzzle.spoiler_free_title())
         emails = puzzle.get_emails(exclude_emails=(author.email,))
 
-    messaging.send_mail_wrapper(
-        subject,
-        "new_comment_email",
-        {
-            "request": request,
-            "puzzle": puzzle,
-            "author": author,
-            "content": content,
-            "is_system": is_system,
-            "testsolve_session": testsolve_session,
-        },
-        emails,
-    )
+    if send_email:
+        messaging.send_mail_wrapper(
+            subject,
+            "new_comment_email",
+            {
+                "request": request,
+                "puzzle": puzzle,
+                "author": author,
+                "content": content,
+                "is_system": is_system,
+                "testsolve_session": testsolve_session,
+            },
+            emails,
+        )
 
 
 @login_required  # noqa: C901
@@ -576,6 +589,11 @@ def puzzle(request, id):
             if form.is_valid():
                 form.save()
                 add_system_comment_here("Edited puzzle solution")
+        elif "add_hint" in request.POST:
+            form = PuzzleHintForm(request.POST)
+            if form.is_valid():
+                form.save()
+                add_system_comment_here("Added hint")
         elif "add_comment" in request.POST:
             comment_form = PuzzleCommentForm(request.POST)
             if comment_form.is_valid():
@@ -609,6 +627,27 @@ def puzzle(request, id):
         except UserProfile.DoesNotExist:
             enable_keyboard_shortcuts = False
 
+        # TODO: participants is still hitting the database once per session;
+        # might be possible to craft a Prefetch to get the list of
+        # participants; or maybe we can abstract out the handrolled user list
+        # logic and combine with the other views that do this
+
+        # I inspected the query and Count with filter does become a SUM of CASE
+        # expressions so it's using the same left join as everything else,
+        # correctly for what we want
+        testsolve_sessions = TestsolveSession.objects.filter(puzzle=puzzle).annotate(
+            has_correct=Exists(
+                TestsolveGuess.objects.filter(session=OuterRef("pk"), correct=True)
+            ),
+            participation_count=Count("participations"),
+            participation_done_count=Count(
+                "participations", filter=Q(participations__ended__isnull=False)
+            ),
+            avg_diff=Avg("participations__difficulty_rating"),
+            avg_fun=Avg("participations__fun_rating"),
+            avg_hours=Avg("participations__hours_spent"),
+        )
+
         return render(
             request,
             "puzzle.html",
@@ -616,7 +655,7 @@ def puzzle(request, id):
                 "puzzle": puzzle,
                 "comments": comments,
                 "comment_form": PuzzleCommentForm(),
-                "testsolve_sessions": TestsolveSession.objects.filter(puzzle=puzzle),
+                "testsolve_sessions": testsolve_sessions,
                 "all_statuses": status.ALL_STATUSES,
                 "is_author": is_author_on(user, puzzle),
                 "is_discussion_editor": is_discussion_editor_on(user, puzzle),
@@ -625,6 +664,7 @@ def puzzle(request, id):
                 "content_form": PuzzleContentForm(instance=puzzle),
                 "solution_form": PuzzleSolutionForm(instance=puzzle),
                 "priority_form": PuzzlePriorityForm(instance=puzzle),
+                "hint_form": PuzzleHintForm(initial={"puzzle": puzzle}),
                 "enable_keyboard_shortcuts": enable_keyboard_shortcuts,
                 "next_unread_puzzle_id": unread_puzzles[0].id
                 if unread_puzzles.count()
@@ -1014,6 +1054,29 @@ def edit_comment(request, id):
     )
 
 
+@login_required
+def edit_hint(request, id):
+    hint = get_object_or_404(Hint, id=id)
+
+    if request.method == "POST":
+        if "delete" in request.POST:
+            hint.delete()
+            return redirect(urls.reverse("puzzle", args=[hint.puzzle.id]))
+        else:
+            form = PuzzleHintForm(request.POST, instance=hint)
+            if form.is_valid():
+                form.save()
+                return redirect(urls.reverse("puzzle", args=[hint.puzzle.id]))
+            else:
+                return render(request, "edit_hint.html", {"hint": hint, "form": form})
+
+    return render(
+        request,
+        "edit_hint.html",
+        {"hint": hint, "form": PuzzleHintForm(instance=hint),},
+    )
+
+
 def warn_about_testsolving(is_spoiled, in_session, has_session):
     reasons = []
     if is_spoiled:
@@ -1061,14 +1124,7 @@ def testsolve_main(request):
 
     sessions = get_sessions_with_joined_and_current(request.user)
     current_sessions = sessions.filter(joined=True, current=True)
-
-    part_subquery = TestsolveParticipation.objects.filter(
-        session=OuterRef("pk"), user=user
-    )[:1]
-    past_sessions = sessions.filter(joined=True, current=False).annotate(
-        fun_rating=Subquery(part_subquery.values("fun_rating")),
-        difficulty_rating=Subquery(part_subquery.values("difficulty_rating")),
-    )
+    past_sessions = sessions.filter(joined=True, current=False)
     joinable_sessions = sessions.filter(joined=False, joinable=True)
 
     testsolvable_puzzles = (
@@ -1104,6 +1160,54 @@ def testsolve_main(request):
     }
 
     return render(request, "testsolve_main.html", context)
+
+
+@login_required
+def testsolve_finder(request):
+    usernames_arg = request.GET.get("usernames")
+    users = []
+    missing_usernames = []
+    if usernames_arg:
+        usernames = re.split("[ \r\n\t,]+", request.GET.get("usernames", ""))
+        for username in usernames:
+            try:
+                user = User.objects.get(username=username)
+                user.full_display_name = get_full_display_name(user)
+                users.append(user)
+            except User.DoesNotExist:
+                missing_usernames.append(username)
+
+    if users:
+        puzzles = list(
+            Puzzle.objects.filter(status=status.TESTSOLVING).order_by("priority")
+        )
+        for puzzle in puzzles:
+            puzzle.user_data = []
+            puzzle.unspoiled_count = 0
+        for user in users:
+            authored_ids = set(user.authored_puzzles.values_list("id", flat=True))
+            editor_ids = set(user.discussing_puzzles.values_list("id", flat=True))
+            spoiled_ids = set(user.spoiled_puzzles.values_list("id", flat=True))
+            for puzzle in puzzles:
+                if puzzle.id in authored_ids:
+                    puzzle.user_data.append("📝 Author")
+                elif puzzle.id in editor_ids:
+                    puzzle.user_data.append("💬 Editor")
+                elif puzzle.id in spoiled_ids:
+                    puzzle.user_data.append("👀 Spoiled")
+                else:
+                    puzzle.user_data.append("❓ Unspoiled")
+                    puzzle.unspoiled_count += 1
+
+        puzzles.sort(key=lambda puzzle: -puzzle.unspoiled_count)
+    else:
+        puzzles = None
+
+    return render(
+        request,
+        "testsolve_finder.html",
+        {"puzzles": puzzles, "users": users, "missing_usernames": missing_usernames,},
+    )
 
 
 def normalize_answer(answer):
@@ -1195,6 +1299,7 @@ def testsolve_one(request, id):
                         testsolve_session=session,
                         is_system=True,
                         content=message,
+                        send_email=correct,
                     )
 
         elif "change_joinable" in request.POST:
@@ -1223,10 +1328,12 @@ def testsolve_one(request, id):
 
     spoiled = is_spoiled_on(user, puzzle)
     answers_exist = session.puzzle.answers.exists()
+    comments = session.comments.filter(puzzle=puzzle)
     context = {
         "session": session,
         "participation": participation,
         "spoiled": spoiled,
+        "comments": comments,
         "answers_exist": answers_exist,
         "guesses": TestsolveGuess.objects.filter(session=session),
         "notes_form": TestsolveSessionNotesForm(instance=session),
@@ -1288,15 +1395,29 @@ class PuzzleFinishForm(forms.Form):
             min_value=0.0,
             help_text="Your best estimate of how many hours you spent on this puzzle. Decimal numbers are allowed.",
         )
-        self.fields["spoil_me"] = forms.BooleanField(
-            help_text="If checked, you will be spoiled on this puzzle and redirected to the puzzle discussion page.",
-            initial=True,
-            required=False,
-        )
-        self.fields["leave_session"] = forms.BooleanField(
-            help_text="If checked, you will be removed from the session and will not receive notifications about comments or answer submissions. You can also use this to close duplicate sessions.",
-            initial=False,
-            required=False,
+        self.fields["finish_method"] = forms.ChoiceField(
+            choices=[
+                (
+                    "SPOIL",
+                    mark_safe(
+                        "<strong>Finish, spoil me</strong>: You will be redirected to the puzzle discussion page. Select this if you finished the testsolve normally, or if you gave up and want to know how the puzzle works. (However, we encourage you to find others to join your session or ask the author/editors for hints before giving up!)"
+                    ),
+                ),
+                (
+                    "NO_SPOIL",
+                    mark_safe(
+                        "<strong>Finish, don't spoil me</strong>: You will be redirected back to the puzzle testsolve session. Select this if you gave up but want to testsolve future revisions of this puzzle."
+                    ),
+                ),
+                (
+                    "LEAVE",
+                    mark_safe(
+                        "<strong>Leave session</strong>: You will be be removed from the list of participants of this session and will stop receiving notifications about comments or answer submissions. Select this if you joined this testsolve session but it concluded without meaningfully spoiling yourself, if you joined this session by mistake, or if this is a duplicate or merged session."
+                    ),
+                ),
+            ],
+            widget=forms.RadioSelect(),
+            initial="SPOIL",
         )
 
     comment = forms.CharField(widget=MarkdownTextarea, required=False)
@@ -1327,17 +1448,18 @@ def testsolve_finish(request, id):
             difficulty = form.cleaned_data["difficulty"] or None
             hours_spent = form.cleaned_data["hours_spent"] or None
             comment = form.cleaned_data["comment"]
-            spoil_me = form.cleaned_data["spoil_me"]
-            leave_session = form.cleaned_data["leave_session"]
+            finish_method = form.cleaned_data["finish_method"]
 
             if already_spoiled:
                 spoil_message = "(solver was already spoiled)"
-            elif spoil_me:
+            elif finish_method == "SPOIL":
                 spoil_message = "👀 solver is now spoiled"
-            elif leave_session:
+            elif finish_method == "LEAVE":
                 spoil_message = "🚪 solver left session"
-            else:
+            elif finish_method == "NO_SPOIL":
                 spoil_message = "❌ solver was not spoiled"
+            else:
+                raise ValidationError("Invalid finish method")
 
             ratings_text = "Fun: {} / Difficulty: {} / Hours spent: {} / {}".format(
                 fun or "n/a", difficulty or "n/a", hours_spent or "n/a", spoil_message
@@ -1362,9 +1484,10 @@ def testsolve_finish(request, id):
             participation.hours_spent = hours_spent
             participation.ended = datetime.datetime.now()
             participation.save()
-            if leave_session:
+            if finish_method == "LEAVE":
                 participation.delete()
-            if spoil_me:
+                return redirect(urls.reverse("testsolve_main"))
+            elif finish_method == "SPOIL":
                 if not already_spoiled:
                     puzzle.spoiled.add(user)
                 return redirect(urls.reverse("puzzle", args=[puzzle.id]))
@@ -1566,6 +1689,23 @@ def edit_round(request, id):
 
 @login_required
 @permission_required("puzzle_editing.change_round")
+def edit_answer(request, id):
+    answer = get_object_or_404(PuzzleAnswer, id=id)
+
+    if request.method == "POST":
+        answer_form = AnswerForm(answer.round, request.POST, instance=answer)
+        if answer_form.is_valid():
+            answer_form.save()
+
+            return redirect(urls.reverse("edit_answer", args=[id]))
+    else:
+        answer_form = AnswerForm(answer.round, instance=answer)
+
+    return render(request, "edit_answer.html", {"answer": answer, "form": answer_form})
+
+
+@login_required
+@permission_required("puzzle_editing.change_round")
 def bulk_add_answers(request, id):
     round = get_object_or_404(Round, id=id)
     if request.method == "POST":
@@ -1592,6 +1732,10 @@ def tags(request):
 
 @login_required
 def statistics(request):
+    past_writing = 0
+    past_testsolving = 0
+    non_puzzle_schedule_tags = ["meta", "navigation", "event"]
+
     all_counts = (
         Puzzle.objects.values("status")
         .order_by("status")
@@ -1617,8 +1761,19 @@ def statistics(request):
             "count": p["count"],
             "rest_count": rest[p["status"]],
         }
+        if status.past_writing(p["status"]):
+            past_writing += p["count"]
+        if status.past_testsolving(p["status"]):
+            past_testsolving += p["count"]
+
         for tag in tags:
             status_obj[tag.name] = tag_counts[tag.name].get(p["status"], 0)
+
+            if tag.name in non_puzzle_schedule_tags:
+                if status.past_writing(p["status"]):
+                    past_writing -= status_obj[tag.name]
+                if status.past_testsolving(p["status"]):
+                    past_testsolving -= status_obj[tag.name]
         statuses.append(status_obj)
     answers = {
         "assigned": PuzzleAnswer.objects.filter(puzzles__isnull=False).count(),
@@ -1641,6 +1796,8 @@ def statistics(request):
             "tags": tags,
             "answers": answers,
             "image_base64": image_base64,
+            "past_writing": past_writing,
+            "past_testsolving": past_testsolving,
         },
     )
 
@@ -1698,11 +1855,29 @@ def edit_tag(request, id):
     )
 
 
+# distinct=True because
+# https://stackoverflow.com/questions/59071464/django-how-to-annotate-manytomany-field-with-count
+# Doing separate aggregations across these fields and manually joining because
+# the query resulting from doing them all at once seems to be very slow? Takes
+# a list (not QuerySet) of all users and a dictionary of annotation names to
+# Django annotations; mutates the users by adding the corresponding attributes
+# to them.
+def annotate_users_helper(user_list, annotation_kwargs):
+    id_dict = dict()
+    for my_user in User.objects.all().annotate(**annotation_kwargs):
+        id_dict[my_user.id] = my_user
+    for user in user_list:
+        my_user = id_dict[user.id]
+        for k in annotation_kwargs:
+            setattr(user, k, getattr(my_user, k))
+
+
 @login_required
 def users(request):
-    # distinct=True because https://stackoverflow.com/questions/59071464/django-how-to-annotate-manytomany-field-with-count
-    annotation_kwargs = dict()
+    users = list(User.objects.all().select_related("profile"))
+
     for key in ["authored", "discussing", "factchecking"]:
+        annotation_kwargs = dict()
         annotation_kwargs[key + "_active"] = Count(
             key + "_puzzles",
             filter=~Q(
@@ -1717,15 +1892,14 @@ def users(request):
             ),
             distinct=True,
         )
-
-        annotation_kwargs[key + "_dead"] = Count(
-            key + "_puzzles",
-            filter=Q(**{key + "_puzzles__status": status.DEAD}),
-            distinct=True,
-        )
         annotation_kwargs[key + "_deferred"] = Count(
             key + "_puzzles",
             filter=Q(**{key + "_puzzles__status": status.DEFERRED}),
+            distinct=True,
+        )
+        annotation_kwargs[key + "_dead"] = Count(
+            key + "_puzzles",
+            filter=Q(**{key + "_puzzles__status": status.DEAD}),
             distinct=True,
         )
         annotation_kwargs[key + "_done"] = Count(
@@ -1733,6 +1907,8 @@ def users(request):
             filter=Q(**{key + "_puzzles__status": status.DONE}),
             distinct=True,
         )
+        annotate_users_helper(users, annotation_kwargs)
+    annotation_kwargs = dict()
     annotation_kwargs["testsolving_done"] = Count(
         "testsolve_participations",
         filter=Q(testsolve_participations__ended__isnull=False),
@@ -1743,12 +1919,11 @@ def users(request):
         filter=Q(testsolve_participations__ended__isnull=True),
         distinct=True,
     )
+    annotate_users_helper(users, annotation_kwargs)
 
-    users = User.objects.all().select_related("profile").annotate(**annotation_kwargs)
-
-    users = list(users)
     for user in users:
         user.full_display_name = get_full_display_name(user)
+        # FIXME You can do this quickly in Django 3.x
         user.is_meta_editor = user.has_perm("puzzle_editing.change_round")
 
     return render(request, "users.html", {"users": users,})

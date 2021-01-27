@@ -1,6 +1,5 @@
 {% load user_list %}
 {% load markdown %}
-{% load puzzle_link %}
 {% load humanize %}
 {% if puzzles %}
 <input id="hide-dead-{{ random_id }}" type="checkbox" class="hide-dead" checked> <label
@@ -9,6 +8,10 @@
 	for="hide-deferred-{{ random_id }}">Hide deferred puzzles</label>
 <input id="hide-visited-{{ random_id }}" type="checkbox" class="hide-visited"> <label
 	for="hide-visited-{{ random_id }}">Only show spoiled+unvisited</label>
+<input id="hide-past-solution-{{ random_id }}" type="checkbox" class="hide-past-solution"> <label
+	for="hide-past-solution-{{ random_id }}">Hide puzzles &ge; Needs Solution</label>
+<input id="show-only-answer-{{ random_id }}" type="checkbox" class="show-only-answer"> <label
+	for="show-only-answer-{{ random_id }}">Show only puzzles with answers</label>
 <div class="table-wrap">
 	<table class="classic sortable">
 		<tr>
@@ -25,7 +28,7 @@
 		</tr>
 		{% for puzzle in puzzles %}
 		<tr
-			class="puzzle-row {% if puzzle.status == dead_status %}dead{% elif puzzle.status == deferred_status %}deferred{% endif %} {% if puzzle.is_spoiled %}spoiled {% if not puzzle.last_visited_date or puzzle.last_comment_date and puzzle.last_comment_date > puzzle.last_visited_date %}unvisited{% endif %}{% endif %}">
+			class="puzzle-row {% if puzzle.status == dead_status %}dead{% elif puzzle.status == deferred_status %}deferred{% elif puzzle.status in past_needs_solution_statuses %}past_needs_solution{% endif %} {% if puzzle.is_spoiled %}spoiled {% if not puzzle.last_visited_date or puzzle.last_comment_date and puzzle.last_comment_date > puzzle.last_visited_date %}unvisited{% endif %}{% endif %} {% if puzzle.has_answer %}answered{%endif%}">
 			{% if puzzle.is_author %}
 			<td sorttable_customkey="1" title="You are an author">📝</td>
 			{% elif puzzle.is_discussing %}
@@ -39,13 +42,14 @@
 			{% else %}
 			<td sorttable_customkey="99" title="You are not spoiled">❓</td>
 			{% endif %}
-			<td sorttable_customkey="{{ puzzle.id }}">{% puzzle_link puzzle %}</td>
+			<td sorttable_customkey="{{ puzzle.id }}">{{ puzzle.html_link }}</td>
+		{% if limit is None or forloop.counter0 < limit %}
 			<td sorttable_customkey="{{ puzzle.get_status_rank }}">{{ puzzle.get_status_display }}</td>
 			<td sorttable_customkey="{{ puzzle.status_mtime.timestamp }}">{{ puzzle.status_mtime | naturaltime }}</td>
-			<td>{% user_list puzzle.authors %}</td>
-			<td class="small-md">{{ puzzle.summary|markdown }}</td>
+			<td>{{ puzzle.authors_html }}</td>
+			<td class="small-md">{{ puzzle.summary }}</td>
 			<td sorttable_customkey="{{ puzzle.priority }}">{{ puzzle.get_priority_display }}</td>
-			<td>{{ puzzle.editors_count_display }}: {% user_list puzzle.discussion_editors %}</td>
+			<td>{{ puzzle.opt_discussion_editors|length }} / {{ puzzle.needed_discussion_editors }}: {{ puzzle.discussion_editors_html }}</td>
 			<td sorttable_customkey="{{ puzzle.last_updated.timestamp }}" class="timestamp"
 				data-timestamp="{{ puzzle.last_updated.timestamp }}">{{ puzzle.last_updated }}</td>
 			{% if puzzle.last_comment_date %}
@@ -54,6 +58,7 @@
 			{% else %}
 			<td sorttable_customkey="0">—</td>
 			{% endif %}
+		{% endif %}
 		</tr>
 		{% endfor %}
 	</table>

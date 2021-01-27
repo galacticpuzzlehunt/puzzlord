@@ -62,6 +62,9 @@
 </form>
 {% endif %}
 
+{% if not answers_exist %}
+<p class="warning">No answers have been assigned to this puzzle in Puzzlord, so the answer checker will not mark any answers as correct.</p>
+{% endif %}
 
 <form method="POST">
 	{% csrf_token %}
@@ -90,13 +93,14 @@ Past guesses:
 {% endif %}
 
 <h2>Puzzle</h2>
+{% if session.puzzle.has_postprod %}<b>Since the puzzle has been postprodded, <a href="https://postprod.hidden.institute/pppzzlvwr21/{{session.puzzle.postprod.slug}}/">the postprodded puzzle</a> should be used rather than this field.</b>{% endif %}
 {% if session.puzzle.content %}
 {{ session.puzzle.content|markdown }}
 {% else %}
 <div class="empty">(no puzzle yet)</div>
 {% endif %}
 
-{% comment_list request.user session.puzzle session.comments.all comment_form False %}
+{% comment_list request.user session.puzzle comments comment_form False %}
 {% else %}
 <p class="alert">You are neither participating in this testsolving session nor spoiled on the puzzle. Would you like to join this session?</p>
 <form method="POST">

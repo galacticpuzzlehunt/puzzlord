@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% load markdown %}
-{% load puzzle_display %}
 {% block title %}
 Rounds
 {% endblock %}
@@ -22,7 +21,7 @@ Rounds
 <div class="table-wrap">
 <table class="classic">
 	<tr>
-		<th colspan="2">Answer</th>
+		<th colspan="3">Answer</th>
 		<th>Puzzle</th>
 		<th>Status</th>
 		<th>Notes</th>
@@ -32,6 +31,9 @@ Rounds
 		{% for puzzle in answer.puzzles %}
 		<tr>
 			{% if forloop.first %}
+			<td rowspan="{{ answer.puzzles|length }}">
+				<a href="{% url 'edit_answer' answer.id %}">edit</a>
+			</td>
 			<td rowspan="{{ answer.puzzles|length }}">
 				<form method="post">
 					{% csrf_token %}
@@ -46,7 +48,7 @@ Rounds
 			{% endif %}
 			<td>
 				<a href="{% url 'puzzle' puzzle.id %}">
-					<span class="assignment-spoiler">{% puzzle_display puzzle %}</span>
+					<span class="assignment-spoiler">{{ puzzle.html_display }}</span>
 					<span class="assignment-unspoiler">(hidden)</span>
 				</a>
 			</td>
@@ -64,6 +66,9 @@ Rounds
 		{% else %}
 		<tr>
 			<td>
+				<a href="{% url 'edit_answer' answer.id %}">edit</a>
+			</td>
+			<td>
 				<form method="post">
 					{% csrf_token %}
 					<button type="submit" name="delete_answer" value="{{ answer.id }}" class="delete-answer-button">
@@ -79,7 +84,7 @@ Rounds
 		{% endif %}
 	{% endfor %}
 	<tr>
-		<td colspan="5">
+		<td colspan="6">
 			<form method="post">
 				{% csrf_token %}
 				{{ round.form.as_p }}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load puzzle_list %}
+{% block title %}
+Edit Answer {{ answer.id }}
+{% endblock %}
+{% block main %}
+	<h1>Edit Answer {{ answer.id }}: {{ answer.answer }}</h1>
+	<a href="{% url 'rounds' %}">Back to rounds/answers</a>
+
+	<form method="post">
+		{% csrf_token %}
+		{{ form.non_field_errors }}
+		<table class="classic">
+			{{ form.as_table }}
+		</table>
+		<input type="submit" value="Submit">
+	</form>
+
+	<h2>Puzzles assigned this answer:</h2>
+	{% puzzle_list answer.puzzles request.user %}
+{% endblock %}

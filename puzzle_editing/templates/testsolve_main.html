@@ -1,7 +1,5 @@
 {% extends "base.html" %}
 {% load puzzle_list %}
-{% load puzzle_link %}
-{% load puzzle_display %}
 {% load testsolve_session_list %}
 {% load user_list %}
 {% load humanize %}
@@ -13,13 +11,14 @@ Testsolving
 <h1>
 	Testsolving
 </h1>
+<a href="{% url 'testsolve_finder' %}">Look for puzzles for a given group of people</a>
 <h2>Testsolving sessions you are in</h2>
 
-{% testsolve_session_list current_sessions request.user True True %}
+{% testsolve_session_list current_sessions request.user show_notes=True show_leave_button=True %}
 
 <h2>Testsolving sessions you can join</h2>
 
-{% testsolve_session_list joinable_sessions request.user False False %}
+{% testsolve_session_list joinable_sessions request.user %}
 
 <h2>Puzzles you can testsolve</h2>
 
@@ -54,7 +53,7 @@ Testsolving
 					<div>({{ puzzle_data.warning }}!)</div>
 					{% endif %}
 				</td>
-				<td>{% if puzzle.is_spoiled %}{% puzzle_link puzzle %}{% else %}{% puzzle_display puzzle %}{% endif %}
+				<td>{% if puzzle.is_spoiled %}{{ puzzle.html_link }}{% else %}{{ puzzle.html_display }}{% endif %}
 				</td>
 				<td class="small-md">{{ puzzle.summary|markdown }}</td>
 				<td>{% user_list puzzle.authors %}</td>
@@ -73,39 +72,7 @@ Testsolving
 
 <h2>Your past testsolving sessions</h2>
 
-{% if past_sessions %}
-<div class="table-wrap">
-	<table class="classic sortable">
-		<tr>
-			<th>Session</th>
-			<th>Puzzle</th>
-			<th>Summary</th>
-			<th>Puzzle Priority</th>
-			<th>Participants</th>
-			<th>Notes</th>
-			<th>Fun</th>
-			<th>Diff.</th>
-		</tr>
-		{% for session in past_sessions %}
-		{% with session.puzzle as puzzle %}
-		<tr>
-			<td sorttable_customkey="{{ session.id }}"><a href="{% url 'testsolve_one' session.id %}">Session
-					{{ session.id }}</a></td>
-			<td sorttable_customkey="{{ puzzle.id }}">{% puzzle_display puzzle %}</td>
-			<td class="small-md">{{ puzzle.summary|markdown }}</td>
-			<td sorttable_customkey="{{ puzzle.priority }}">{{ puzzle.get_priority_display }}</td>
-			<td>{% user_list session.participants %}</td>
-			<td class="small-md">{{ session.notes|markdown }}</td>
-			<td>{{ session.fun_rating|default:"n/a" }}</td>
-			<td>{{ session.difficulty_rating|default:"n/a" }}</td>
-		</tr>
-		{% endwith %}
-		{% endfor %}
-	</table>
-</div>
-{% else %}
-<div class="empty">No sessions to list</div>
-{% endif %}
+{% testsolve_session_list past_sessions request.user show_ratings=True %}
 
 {% endblock %}
 

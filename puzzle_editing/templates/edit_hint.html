@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load user_list %}
+{% load comment_list %}
+{% load markdown %}
+{% block title %}
+Edit Hint {{ hint.id }}
+{% endblock %}
+{% block main %}
+	<h1>Edit Hint {{ hint.id }}</h1>
+
+	<a href="{% url 'puzzle' hint.puzzle.id %}">Back to {{ hint.puzzle }}</a>
+
+	<form method="post">
+		{% csrf_token %}
+		{{ form.non_field_errors }}
+		<table class="classic">
+			{{ form.as_table }}
+		</table>
+		<input type="submit" value="Submit">
+		or
+		<input type="submit" id="delete-hint" name="delete" value="Delete">
+		<script type="text/javascript">
+			document.getElementById('delete-hint').addEventListener('click', (event) => {
+				if (!confirm('Are you sure you want to delete this hint?')) {
+					event.preventDefault();
+				}
+			});
+		</script>
+	</form>
+{% endblock %}

@@ -1,5 +1,7 @@
 from enum import Enum
 
+import django.urls as urls
+from django import forms
 from django.contrib.auth.models import User
 from django.core.validators import FileExtensionValidator
 from django.core.validators import RegexValidator
@@ -10,6 +12,9 @@ from django.db.models import OuterRef
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 from django.utils import timezone
+from django.utils.html import format_html
+from django.utils.html import format_html_join
+from django.utils.html import mark_safe
 
 import puzzle_editing.status as status
 
@@ -33,6 +38,62 @@ class UserProfile(models.Model):
         help_text="Tell us about yourself. What kinds of puzzle genres or subject matter do you like?",
     )
     enable_keyboard_shortcuts = models.BooleanField(default=False)
+
+    @staticmethod
+    def profile_display_name_of(user):
+        try:
+            return user.profile.display_name
+        except UserProfile.DoesNotExist:
+            return None
+
+    # Some of this templating is done in an inner loop, so doing it with
+    # inclusion tags turns out to be a big performance hit. They're also small
+    # enough to be pretty easy to write in Python. Separating out the versions
+    # that don't even bother taking a User and just take two strings might be a
+    # bit premature, but I think skipping prefetching and model construction is
+    # worth it in an inner loop...
+    @staticmethod
+    def html_user_display_of_flat(username, display_name, linkify):
+        if display_name:
+            ret = format_html('<span title="{}">{}</span>', username, display_name)
+        else:
+            ret = username
+
+        if linkify:
+            return format_html(
+                '<a href="{}">{}</a>', urls.reverse("user", args=[username]), ret
+            )
+        else:
+            return ret
+
+    @staticmethod
+    def html_user_display_of(user, linkify):
+        return UserProfile.html_user_display_of_flat(
+            user.username, UserProfile.profile_display_name_of(user), linkify
+        )
+
+    @staticmethod
+    def html_user_list_of_flat(ud_pairs, linkify):
+        # iterate over ud_pairs exactly once
+        s = format_html_join(
+            ", ",
+            "{}",
+            (
+                (UserProfile.html_user_display_of_flat(un, dn, linkify),)
+                for un, dn in ud_pairs
+            ),
+        )
+        return s or mark_safe('<span class="empty">(none)</span>')
+
+    @staticmethod
+    def html_user_list_of(users, linkify):
+        return UserProfile.html_user_list_of_flat(
+            (
+                (user.username, UserProfile.profile_display_name_of(user))
+                for user in users
+            ),
+            linkify,
+        )
 
 
 class Round(models.Model):
@@ -101,7 +162,31 @@ class Puzzle(models.Model):
         return "Puzzle {}: {}".format(self.id, name)
 
     def important_tag_names(self):
+        if hasattr(self, "prefetched_important_tag_names"):
+            return self.prefetched_important_tag_names
         return self.tags.filter(important=True).values_list("name", flat=True)
+
+    # This is done in an inner loop, so doing it with inclusion tags turns
+    # out to be a big performance hit. They're also small enough to be pretty
+    # easy to write in Python.
+    def html_display(self):
+        return format_html(
+            "{}: {} {}",
+            self.id,
+            format_html_join(
+                " ",
+                "<sup>[{}]</sup>",
+                ((name,) for name in self.important_tag_names()),
+            ),
+            self.spoiler_free_name(),
+        )
+
+    def html_link(self):
+        return format_html(
+            """<a href="{}" class="puzzle-link">{}</a>""",
+            urls.reverse("puzzle", args=[self.id]),
+            self.html_display(),
+        )
 
     def __str__(self):
         return self.spoiler_free_title()
@@ -178,10 +263,6 @@ class Puzzle(models.Model):
     )
     solution = models.TextField(blank=True)
 
-    def editors_count_display(self):
-        count = self.discussion_editors.count()
-        return "{} / {}".format(count, self.needed_discussion_editors)
-
     def get_emails(self, exclude_emails=()):
         emails = set(self.authors.values_list("email", flat=True))
         emails |= set(self.discussion_editors.values_list("email", flat=True))
@@ -199,6 +280,14 @@ class Puzzle(models.Model):
         except PuzzlePostprod.DoesNotExist:
             return False
 
+    def has_hints(self):
+        return self.hints.count() > 0
+
+    def ordered_hints(self):
+        return self.hints.order_by("order")
+
+    def has_answer(self):
+        return self.answers.count() > 0
 
 @receiver(pre_save, sender=Puzzle)
 def set_status_mtime(sender, instance, **kwargs):
@@ -449,3 +538,33 @@ def get_user_role(user, puzzle):
         return "factchecker"
     else:
         return None
+
+
+class Hint(models.Model):
+    class Meta:
+        ordering = ["order"]
+
+    puzzle = models.ForeignKey(Puzzle, on_delete=models.PROTECT, related_name="hints")
+    order = models.FloatField(
+        blank=False,
+        null=False,
+        help_text="Order in the puzzle - use 0 for a hint at the very beginning of the puzzle, or 100 for a hint on extraction, and then do your best to extrapolate in between. Decimals are okay. For multiple subpuzzles, assign a whole number to each subpuzzle and use decimals off of that whole number for multiple hints in the subpuzzle.",
+    )
+    keywords = models.CharField(
+        max_length=100,
+        blank=True,
+        null=False,
+        help_text="Comma-separated keywords to look for in hunters' hint requests before displaying this hint suggestion",
+    )
+    content = models.CharField(
+        max_length=1000,
+        blank=False,
+        null=False,
+        help_text="Canned hint to give a team (can be edited by us before giving it)",
+    )
+
+    def get_keywords(self):
+        return self.keywords.split(",")
+
+    def __str__(self):
+        return f"Hint #{self.order} for {self.puzzle}"

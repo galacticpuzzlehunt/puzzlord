@@ -5,14 +5,8 @@ from puzzle_editing.models import UserProfile
 register = template.Library()
 
 
-@register.inclusion_tag("tags/user_display.html")
-def user_display(user):
+@register.simple_tag
+def user_display(user, linkify=False):
     """Display a user"""
 
-    try:
-        if user.profile.display_name:
-            user.display_name = user.profile.display_name
-    except UserProfile.DoesNotExist:
-        pass
-
-    return {"user": user}
+    return UserProfile.html_user_display_of(user, linkify)

@@ -20,5 +20,5 @@
 	<h2>Puzzles {{them.profile.display_name | default:them}} is postprodding</h2>
 	{% puzzle_list them.postprodding_puzzles request.user %}
 	<h2>Testsolving sessions {{them.profile.display_name|default:them}} has been in</h2>
-	{% testsolve_session_list testsolving_sessions request.user False False %}
+	{% testsolve_session_list testsolving_sessions request.user %}
 {% endblock %}

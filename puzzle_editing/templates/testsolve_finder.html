@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load markdown %}
+{% load user_list %}
+{% load humanize %}
+{% block title %}
+	Testsolve Finder
+{% endblock %}
+{% block main %}
+<h1>
+	Testsolve Finder
+</h1>
+
+{% if missing_usernames %}
+Error: Usernames not found: {{ missing_usernames|join:", " }}
+{% endif %}
+
+{% if users %}
+{% if puzzles %}
+<p>(Starting the session won't automatically add other people &mdash; you'll  still have to send them the link and ask them to join.)</p>
+<table class="classic">
+	<tr>
+		<th>#❓</th>
+		<th></th>
+		<th>ID/Name</th>
+		<th>Summary</th>
+		<th>Authors</th>
+		<th>Editors</th>
+		<th>Priority</th>
+		<th>When Entered Testsolving</th>
+		{% for user in users %}
+		<th>{{ user.full_display_name }}</th>
+		{% endfor %}
+	</tr>
+	{% for puzzle in puzzles %}
+	<tr>
+		<td>{{ puzzle.unspoiled_count }}</td>
+		<td>
+			<button type="submit" name="start_session" value="{{ puzzle.id }}">
+				Start new session
+			</button>
+		</td>
+		<td>{{ puzzle.html_display }}</td>
+		<td class="small-md">{{ puzzle.summary|markdown }}</td>
+		<td>{% user_list puzzle.authors %}</td>
+		<td>{% user_list puzzle.discussion_editors %}</td>
+		<td>{{ puzzle.get_priority_display }}</td>
+		<td>{{ puzzle.status_mtime | naturaltime }}</td>
+		{% for user_data in puzzle.user_data %}
+		<td>{{ user_data }}</td>
+		{% endfor %}
+	</tr>
+	{% endfor %}
+</table>
+{% else %}
+No puzzles in testsolving!
+{% endif %}
+{% endif %}
+
+<p>Enter a list of usernames to see which puzzles in testsolving you all aren't spoiled on.</p>
+
+<form method="GET">
+	<label for="usernames">Space-separated list of usernames:</label>
+	<input type="text" name="usernames" id="usernames">
+	<input type="submit" name="find" value="Find">
+</form>
+{% endblock %}

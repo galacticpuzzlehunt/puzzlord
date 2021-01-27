@@ -17,6 +17,7 @@ NEEDS_POSTPROD = "NP"
 NEEDS_FACTCHECK = "NF"
 NEEDS_COPY_EDITS = "NC"
 NEEDS_FINAL_REVISIONS = "NR"
+NEEDS_HINTS = "NH"
 DONE = "D"
 DEFERRED = "DF"
 DEAD = "X"
@@ -41,6 +42,7 @@ STATUSES = [
     NEEDS_FACTCHECK,
     NEEDS_FINAL_REVISIONS,
     NEEDS_COPY_EDITS,
+    NEEDS_HINTS,
     DONE,
     DEFERRED,
     DEAD,
@@ -52,6 +54,18 @@ def get_status_rank(status):
         return STATUSES.index(status)
     except ValueError:  # not worth crashing imo
         return -1
+
+
+def past_writing(status):
+    return get_status_rank(status) > get_status_rank(
+        WRITING_FLEXIBLE
+    ) and get_status_rank(status) <= get_status_rank(DONE)
+
+
+def past_testsolving(status):
+    return get_status_rank(status) > get_status_rank(REVISING) and get_status_rank(
+        status
+    ) <= get_status_rank(DONE)
 
 
 # Possible blockers:
@@ -149,7 +163,8 @@ BLOCKERS_AND_TRANSITIONS = {
         ],
     ),
     NEEDS_FINAL_REVISIONS: (AUTHORS, [(NEEDS_COPY_EDITS, "✅ Request copy edits"),]),
-    NEEDS_COPY_EDITS: (FACTCHECKERS, [(DONE, "✅🎆 Mark as done! 🎆✅"),]),
+    NEEDS_COPY_EDITS: (FACTCHECKERS, [(NEEDS_HINTS, "✅ Request Hints"),]),
+    NEEDS_HINTS: (AUTHORS, [(DONE, "✅🎆 Mark as done! 🎆✅"),]),
     DEFERRED: (NOBODY, [(IDEA_IN_DEVELOPMENT, "✅ Return to in development"),]),
 }
 
@@ -198,6 +213,7 @@ DESCRIPTIONS = {
     NEEDS_FACTCHECK: "Needs Factcheck",
     NEEDS_FINAL_REVISIONS: "Needs Final Revisions",
     NEEDS_COPY_EDITS: "Needs Copy Edits",
+    NEEDS_HINTS: "Needs Hints",
     DONE: "Done",
     DEFERRED: "Deferred",
     DEAD: "Dead",

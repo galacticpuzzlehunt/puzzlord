@@ -1,7 +1,5 @@
 {% load user_list %}
 {% load markdown %}
-{% load puzzle_link %}
-{% load puzzle_display %}
 {% if sessions %}
 <div class="table-wrap">
 <table class="classic sortable">
@@ -14,6 +12,10 @@
 		{% if show_notes %}
 			<th>Notes</th>
 		{% endif %}
+		{% if show_ratings %}
+			<th>Fun</th>
+			<th>Diff.</th>
+		{% endif %}
 		{% if show_leave %}
 			<th></th>
 		{% endif %}
@@ -22,12 +24,16 @@
 		{% with session.puzzle as puzzle %}
 		<tr>
 			<td sorttable_customkey="{{ session.id }}"><a href="{% url 'testsolve_one' session.id %}">Session {{ session.id }}</a>{% if session.is_author %}<div>(you are an author)</div>{% elif session.is_spoiled %}<div>(you are spoiled)</div>{% endif %}</td>
-			<td sorttable_customkey="{{ puzzle.id }}">{% if session.is_spoiled %}{% puzzle_link puzzle %}{% else %}{% puzzle_display puzzle %}{% endif %}</td>
+			<td sorttable_customkey="{{ puzzle.id }}">{% if session.is_spoiled %}{{ puzzle.html_link }}{% else %}{{ puzzle.html_display }}{% endif %}</td>
 			<td class="small-md">{{ puzzle.summary|markdown }}</td>
 			<td sorttable_customkey="{{ puzzle.priority }}">{{ puzzle.get_priority_display }}</td>
-			<td>{% user_list session.participants %}</td>
+			<td>{{ session.participants_html }}</td>
 			{% if show_notes %}
 				<td class="small-md">{{ session.notes|markdown }}</td>
+			{% endif %}
+			{% if show_ratings %}
+				<td>{{ session.fun_rating|default:"n/a" }}</td>
+				<td>{{ session.difficulty_rating|default:"n/a" }}</td>
 			{% endif %}
 			{% if show_leave %}
 				<td><a href="{% url 'testsolve_finish' session.id %}">Finish or Leave</a></td>

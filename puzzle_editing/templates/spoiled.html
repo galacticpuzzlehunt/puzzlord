@@ -18,6 +18,8 @@ Spoiled People
 		<th>ID/Name</th>
 		<th>Summary</th>
 		<th>Status</th>
+		<th>Authors</th>
+		<th>Editors</th>
 		<th>Spoiled</th>
 		<th>Currently Testing</th>
         <th>Priority</th>
@@ -27,6 +29,8 @@ Spoiled People
 		<td>{% if puzzle.is_spoiled %}<a href="{% url 'puzzle' puzzle.id %}">{%endif %}{{ puzzle.id }}: {{ puzzle.spoiler_free_name }}{% if puzzle.is_spoiled %}</a>{%endif %}</td>
 		<td class="small-md">{{ puzzle.summary|markdown }}</td>
 		<td>{{ puzzle.get_status_display }}</td>
+		<td>{% user_list puzzle.authors %}</td>
+		<td>{% user_list puzzle.discussion_editors %}</td>
 		<td>{% user_list puzzle.spoiled %}</td>
 		<td class="testsessions">{% for session in puzzle.testsolve_sessions.all %}
             {% if session.active_participants %}

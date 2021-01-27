@@ -7,6 +7,8 @@ register = template.Library()
 
 @register.inclusion_tag("tags/comment_list.html")
 def comment_list(user, puzzle, comments, comment_form, show_testsolve_session_links):
+    comments = comments.order_by("date").select_related("author__profile")
+
     authors = set(puzzle.authors.values_list("id", flat=True))
 
     for comment in comments:

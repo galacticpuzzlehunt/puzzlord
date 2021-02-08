@@ -100,7 +100,7 @@ Past guesses:
 <div class="empty">(no puzzle yet)</div>
 {% endif %}
 
-{% comment_list request.user session.puzzle comments comment_form False %}
+{% comment_list request.user session.puzzle comments comment_form False False %}
 {% else %}
 <p class="alert">You are neither participating in this testsolving session nor spoiled on the puzzle. Would you like to join this session?</p>
 <form method="POST">

@@ -6,6 +6,10 @@ System message (on behalf of {{ author.username }}):
 
 {{ content }}
 
+{% if status_change %}
+Status changed to {{ status_change }}
+{% endif %}
+
 Puzzle: {{ request.scheme }}://{{ request.get_host }}{% url 'puzzle' puzzle.id %}
 {% if testsolve_session %}
 Testsolve session: {{ request.scheme }}://{{ request.get_host }}{% url 'testsolve_one' testsolve_session.id %}

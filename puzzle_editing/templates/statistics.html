@@ -44,7 +44,7 @@ Statistics
             </tr>
             <tr>
                 <td>not yet released</td>
-                <td>0</td>
+                <td title="UNRELEASED_PUZZLE_COUNT">{{unreleased_count|default_if_none:"?"}}</td>
             </tr>
             <tr>
                 <th>assigned already</th>
@@ -81,11 +81,12 @@ Statistics
       </table>
     </div>
 </div>
-<h1 style>Chart!</h1>
+<h1>Chart!</h1>
 <div style="margin: 20px 50px;">
     <div style="margin-bottom: 10px;"><a href="?time=alltime">All time</a> <a href="?time=1m">1 Month</a> <a
             href="?time=2w">2 weeks</a> <a href="?time=1w">1 Week</a> <a href="?time=3d">3 Days</a> <a href="?time=1d">1
             Day</a> </div>
     <img src="data:image/png;base64, {{ image_base64 }}" alt="puzzle stats" />
+    <span class="deemph">TARGET_PUZZLE_COUNT = {{ target_count }}</span>
 </div>
 {% endblock %}

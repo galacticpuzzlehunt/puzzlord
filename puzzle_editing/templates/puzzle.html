@@ -88,16 +88,16 @@
 						</td>
 					</tr>
 					<tr>
-						<th>Discussion editors<br/>
-							{% if is_discussion_editor %}
-							<input type="submit" name="remove_discussion_editor" value="Remove me">
+						<th>Editors<br />
+							{% if is_editor %}
+							<input type="submit" name="remove_editor" value="Remove me">
 							{% else %}
-							<input type="submit" name="add_discussion_editor" value="Add me">
+							<input type="submit" name="add_editor" value="Add me">
 							{% endif %}
 							<a href="{% url 'puzzle_people' puzzle.id %}" class="edit-link">edit</a>
 						</th>
 						<td>
-							{% user_list puzzle.discussion_editors %}
+							{% user_list puzzle.editors %}
 						</td>
 					</tr>
 					<tr>
@@ -127,7 +127,8 @@
 						</td>
 					</tr>
 					<tr>
-						<th>Spoiled
+						<th>Spoiled<br />
+							<a href="{% url 'puzzle_escape' puzzle.id %}">🏃</a>
 							<a href="{% url 'puzzle_people' puzzle.id %}" class="edit-link">edit</a>
 						</th>
 						<td>{% user_list puzzle.spoiled %}
@@ -227,7 +228,7 @@
 		<div class="empty">(no testsolve sessions yet)</div>
 		{% endif %}
 
-		{% comment_list request.user puzzle comments comment_form True %}
+			{% comment_list request.user puzzle comments comment_form True True %}
 		</main>
 	</div>
 </div>

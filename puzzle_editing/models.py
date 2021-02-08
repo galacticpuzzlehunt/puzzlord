@@ -192,10 +192,8 @@ class Puzzle(models.Model):
         return self.spoiler_free_title()
 
     authors = models.ManyToManyField(User, related_name="authored_puzzles", blank=True)
-    discussion_editors = models.ManyToManyField(
-        User, related_name="discussing_puzzles", blank=True
-    )
-    needed_discussion_editors = models.IntegerField(default=2)
+    editors = models.ManyToManyField(User, related_name="editing_puzzles", blank=True)
+    needed_editors = models.IntegerField(default=2)
     spoiled = models.ManyToManyField(
         User,
         related_name="spoiled_puzzles",
@@ -265,7 +263,7 @@ class Puzzle(models.Model):
 
     def get_emails(self, exclude_emails=()):
         emails = set(self.authors.values_list("email", flat=True))
-        emails |= set(self.discussion_editors.values_list("email", flat=True))
+        emails |= set(self.editors.values_list("email", flat=True))
         emails |= set(self.factcheckers.values_list("email", flat=True))
         emails |= set(self.postprodders.values_list("email", flat=True))
 
@@ -288,6 +286,7 @@ class Puzzle(models.Model):
 
     def has_answer(self):
         return self.answers.count() > 0
+
 
 @receiver(pre_save, sender=Puzzle)
 def set_status_mtime(sender, instance, **kwargs):
@@ -456,10 +455,52 @@ class PuzzleComment(models.Model):
         blank=True,
         related_name="comments",
     )
-    content = models.TextField()
+    content = models.TextField(
+        blank=True,
+        help_text="The content of the comment. Should probably only be blank if the status_change is set.",
+    )
+    status_change = models.CharField(
+        max_length=status.MAX_LENGTH,
+        choices=status.DESCRIPTIONS.items(),
+        blank=True,
+        help_text="Any status change caused by this comment. Only used for recording history and computing statistics; not a source of truth (i.e. the puzzle will still store its current status, and this field's value on any comment doesn't directly imply anything about that in any technically enforced way).",
+    )
 
     def __str__(self):
         return "Comment #{} on {}".format(self.id, self.puzzle)
+
+
+class CommentReaction(models.Model):
+    # Since these are frivolous and display-only, I'm not going to bother
+    # restricting them on the database model layer.
+    EMOJI_OPTIONS = ["👍", "👎", "🎉", "❤️", "😄", "🤔", "😕", "❓", "👀", "✈️"]
+    emoji = models.CharField(max_length=8)
+    comment = models.ForeignKey(
+        PuzzleComment, on_delete=models.CASCADE, related_name="reactions"
+    )
+    reactor = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="reactions"
+    )
+
+    def __str__(self):
+        return "{} reacted {} on {}".format(
+            self.reactor.username, self.emoji, self.comment
+        )
+
+    class Meta:
+        unique_together = ("emoji", "comment", "reactor")
+
+    @classmethod
+    def toggle(cls, emoji, comment, reactor):
+        # This just lets you react with any string to a comment, but it's
+        # not the end of the world.
+        my_reactions = cls.objects.filter(comment=comment, emoji=emoji, reactor=reactor)
+        # Force the queryset instead of checking if it's empty because, if
+        # it's not empty, we care about its contents.
+        if len(my_reactions) > 0:
+            my_reactions.delete()
+        else:
+            cls(emoji=emoji, comment=comment, reactor=reactor).save()
 
 
 class TestsolveParticipation(models.Model):
@@ -515,8 +556,8 @@ def is_author_on(user, puzzle):
     return puzzle.authors.filter(id=user.id).exists()
 
 
-def is_discussion_editor_on(user, puzzle):
-    return puzzle.discussion_editors.filter(id=user.id).exists()
+def is_editor_on(user, puzzle):
+    return puzzle.editors.filter(id=user.id).exists()
 
 
 def is_factchecker_on(user, puzzle):
@@ -530,7 +571,7 @@ def is_postprodder_on(user, puzzle):
 def get_user_role(user, puzzle):
     if is_author_on(user, puzzle):
         return "author"
-    elif is_discussion_editor_on(user, puzzle):
+    elif is_editor_on(user, puzzle):
         return "editor"
     elif is_postprodder_on(user, puzzle):
         return "postprodder"
@@ -568,3 +609,29 @@ class Hint(models.Model):
 
     def __str__(self):
         return f"Hint #{self.order} for {self.puzzle}"
+
+
+class SiteSetting(models.Model):
+    """Arbitrary settings we don't want to customize from code."""
+
+    key = models.CharField(max_length=100, unique=True)
+    value = models.TextField()
+
+    def __str__(self):
+        return "{} = {}".format(self.key, self.value)
+
+    @classmethod
+    def get_setting(cls, key):
+        try:
+            return cls.objects.get(key=key).value
+        except cls.DoesNotExist:
+            return None
+
+    @classmethod
+    def get_int_setting(cls, key):
+        try:
+            return int(cls.objects.get(key=key).value)
+        except cls.DoesNotExist:
+            return None
+        except ValueError:
+            return None

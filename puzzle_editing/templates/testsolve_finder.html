@@ -42,7 +42,7 @@ Error: Usernames not found: {{ missing_usernames|join:", " }}
 		<td>{{ puzzle.html_display }}</td>
 		<td class="small-md">{{ puzzle.summary|markdown }}</td>
 		<td>{% user_list puzzle.authors %}</td>
-		<td>{% user_list puzzle.discussion_editors %}</td>
+		<td>{% user_list puzzle.editors %}</td>
 		<td>{{ puzzle.get_priority_display }}</td>
 		<td>{{ puzzle.status_mtime | naturaltime }}</td>
 		{% for user_data in puzzle.user_data %}

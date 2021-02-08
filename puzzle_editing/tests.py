@@ -70,7 +70,7 @@ class Misc(TestCase):
         self.puzzle3.authors.add(self.a)
         self.puzzle3.spoiled.add(self.a)
         self.puzzle3.spoiled.add(self.b)
-        self.puzzle3.discussion_editors.add(self.b)
+        self.puzzle3.editors.add(self.b)
 
         self.session1 = TestsolveSession(puzzle=self.puzzle1)
         self.session1.save()
@@ -127,13 +127,13 @@ class Misc(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "puzzle.html")
         self.assertTrue(response.context["is_author"])
-        self.assertFalse(response.context["is_discussion_editor"])
+        self.assertFalse(response.context["is_editor"])
 
         response = c.get(urls.reverse("puzzle", args=[self.puzzle3.id]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "puzzle.html")
         self.assertFalse(response.context["is_author"])
-        self.assertTrue(response.context["is_discussion_editor"])
+        self.assertTrue(response.context["is_editor"])
 
     def test_puzzle_subpage_sanity(self):
         c = Client()

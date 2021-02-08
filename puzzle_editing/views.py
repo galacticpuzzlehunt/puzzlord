@@ -32,10 +32,11 @@ import puzzle_editing.status as status
 import puzzle_editing.utils as utils
 import puzzlord.settings as settings
 from puzzle_editing.graph import curr_puzzle_graph_b64
+from puzzle_editing.models import CommentReaction
 from puzzle_editing.models import get_user_role
 from puzzle_editing.models import Hint
 from puzzle_editing.models import is_author_on
-from puzzle_editing.models import is_discussion_editor_on
+from puzzle_editing.models import is_editor_on
 from puzzle_editing.models import is_factchecker_on
 from puzzle_editing.models import is_postprodder_on
 from puzzle_editing.models import is_spoiled_on
@@ -46,6 +47,7 @@ from puzzle_editing.models import PuzzlePostprod
 from puzzle_editing.models import PuzzleTag
 from puzzle_editing.models import PuzzleVisited
 from puzzle_editing.models import Round
+from puzzle_editing.models import SiteSetting
 from puzzle_editing.models import StatusSubscription
 from puzzle_editing.models import TestsolveGuess
 from puzzle_editing.models import TestsolveParticipation
@@ -86,6 +88,8 @@ def get_credits_name(user):
 def index(request):
     user = request.user
 
+    announcement = SiteSetting.get_setting("ANNOUNCEMENT")
+
     if not request.user.is_authenticated:
         return render(request, "index_not_logged_in.html")
 
@@ -93,7 +97,7 @@ def index(request):
         authors=user, status__in=status.STATUSES_BLOCKED_ON_AUTHORS,
     )
     blocked_on_editor_puzzles = Puzzle.objects.filter(
-        discussion_editors=user, status__in=status.STATUSES_BLOCKED_ON_EDITORS,
+        editors=user, status__in=status.STATUSES_BLOCKED_ON_EDITORS,
     )
     current_sessions = get_sessions_with_joined_and_current(user).filter(
         joined=True, current=True
@@ -124,6 +128,7 @@ def index(request):
         request,
         "index.html",
         {
+            "announcement": announcement,
             "blocked_on_author_puzzles": blocked_on_author_puzzles,
             "blocked_on_editor_puzzles": blocked_on_editor_puzzles,
             "current_sessions": current_sessions,
@@ -388,7 +393,7 @@ def random_answers(request):
 @login_required
 def authored(request):
     puzzles = Puzzle.objects.filter(authors=request.user)
-    editing_puzzles = Puzzle.objects.filter(discussion_editors=request.user)
+    editing_puzzles = Puzzle.objects.filter(editors=request.user)
     return render(
         request,
         "authored.html",
@@ -454,7 +459,15 @@ class PuzzleHintForm(forms.ModelForm):
 
 
 def add_comment(
-    request, puzzle, author, is_system, content, testsolve_session=None, send_email=True
+    *,
+    request,
+    puzzle,
+    author,
+    is_system,
+    content,
+    testsolve_session=None,
+    send_email=True,
+    status_change="",
 ):
     comment = PuzzleComment(
         puzzle=puzzle,
@@ -462,6 +475,7 @@ def add_comment(
         testsolve_session=testsolve_session,
         is_system=is_system,
         content=content,
+        status_change=status_change,
     )
     comment.save()
 
@@ -485,6 +499,9 @@ def add_comment(
                 "content": content,
                 "is_system": is_system,
                 "testsolve_session": testsolve_session,
+                "status_change": status.get_display(status_change)
+                if status_change
+                else None,
             },
             emails,
         )
@@ -500,9 +517,14 @@ def puzzle(request, id):
         # update the auto_now=True DateTimeField anyway
         vis.save()
 
-    def add_system_comment_here(message):
+    def add_system_comment_here(message, status_change=""):
         add_comment(
-            request=request, puzzle=puzzle, author=user, is_system=True, content=message
+            request=request,
+            puzzle=puzzle,
+            author=user,
+            is_system=True,
+            content=message,
+            status_change=status_change,
         )
 
     if request.method == "POST":
@@ -514,19 +536,20 @@ def puzzle(request, id):
             puzzle.save()
 
             status_display = status.get_display(new_status)
-            add_system_comment_here("Status changed to " + status_display)
+            add_system_comment_here("", status_change=new_status)
 
-            for session in puzzle.testsolve_sessions.filter(joinable=True):
-                session.joinable = False
-                add_comment(
-                    request=request,
-                    puzzle=puzzle,
-                    author=user,
-                    testsolve_session=session,
-                    is_system=True,
-                    content="Puzzle status changed, automaticaly marking session as no longer joinable",
-                )
-                session.save()
+            if new_status != status.TESTSOLVING:
+                for session in puzzle.testsolve_sessions.filter(joinable=True):
+                    session.joinable = False
+                    add_comment(
+                        request=request,
+                        puzzle=puzzle,
+                        author=user,
+                        testsolve_session=session,
+                        is_system=True,
+                        content="Puzzle status changed, automaticaly marking session as no longer joinable",
+                    )
+                    session.save()
 
             subscriptions = (
                 StatusSubscription.objects.filter(status=new_status)
@@ -561,12 +584,12 @@ def puzzle(request, id):
         elif "remove_author" in request.POST:
             puzzle.authors.remove(user)
             add_system_comment_here("Removed author " + str(user))
-        elif "add_discussion_editor" in request.POST:
-            puzzle.discussion_editors.add(user)
-            add_system_comment_here("Added discussion editor " + str(user))
-        elif "remove_discussion_editor" in request.POST:
-            puzzle.discussion_editors.remove(user)
-            add_system_comment_here("Removed discussion editor " + str(user))
+        elif "add_editor" in request.POST:
+            puzzle.editors.add(user)
+            add_system_comment_here("Added editor " + str(user))
+        elif "remove_editor" in request.POST:
+            puzzle.editors.remove(user)
+            add_system_comment_here("Removed editor " + str(user))
         elif "add_factchecker" in request.POST:
             puzzle.factcheckers.add(user)
             add_system_comment_here("Added factchecker " + str(user))
@@ -594,8 +617,18 @@ def puzzle(request, id):
             if form.is_valid():
                 form.save()
                 add_system_comment_here("Added hint")
-        elif "add_comment" in request.POST:
+        elif (
+            "add_comment" in request.POST or "add_comment_change_status" in request.POST
+        ):
             comment_form = PuzzleCommentForm(request.POST)
+            # Not worth crashing over. Just do our best.
+            status_change_dirty = request.POST.get("add_comment_change_status")
+            status_change = ""
+            if (
+                status_change_dirty
+                and status_change_dirty in status.BLOCKERS_AND_TRANSITIONS
+            ):
+                status_change = status_change_dirty
             if comment_form.is_valid():
                 add_comment(
                     request=request,
@@ -603,7 +636,15 @@ def puzzle(request, id):
                     author=user,
                     is_system=False,
                     content=comment_form.cleaned_data["content"],
+                    status_change=status_change,
                 )
+        elif "react_comment" in request.POST:
+            emoji = request.POST.get("emoji")
+            comment = PuzzleComment.objects.get(id=request.POST["react_comment"])
+            # This just lets you react with any string to a comment, but it's
+            # not the end of the world.
+            if emoji and comment:
+                CommentReaction.toggle(emoji, comment, user)
         # refresh
         return redirect(urls.reverse("puzzle", args=[id]))
 
@@ -658,7 +699,7 @@ def puzzle(request, id):
                 "testsolve_sessions": testsolve_sessions,
                 "all_statuses": status.ALL_STATUSES,
                 "is_author": is_author_on(user, puzzle),
-                "is_discussion_editor": is_discussion_editor_on(user, puzzle),
+                "is_editor": is_editor_on(user, puzzle),
                 "is_factchecker": is_factchecker_on(user, puzzle),
                 "is_postprodder": is_postprodder_on(user, puzzle),
                 "content_form": PuzzleContentForm(instance=puzzle),
@@ -669,6 +710,7 @@ def puzzle(request, id):
                 "next_unread_puzzle_id": unread_puzzles[0].id
                 if unread_puzzles.count()
                 else None,
+                "disable_postprod": SiteSetting.get_setting("DISABLE_POSTPROD"),
             },
         )
     else:
@@ -903,7 +945,7 @@ class PuzzlePeopleForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(PuzzlePeopleForm, self).__init__(*args, **kwargs)
         self.fields["authors"] = UserMultipleChoiceField(required=False)
-        self.fields["discussion_editors"] = UserMultipleChoiceField(
+        self.fields["editors"] = UserMultipleChoiceField(
             required=False, editors_first=True
         )
         self.fields["factcheckers"] = UserMultipleChoiceField(required=False)
@@ -918,7 +960,7 @@ class PuzzlePeopleForm(forms.ModelForm):
         model = Puzzle
         fields = [
             "authors",
-            "discussion_editors",
+            "editors",
             "factcheckers",
             "postprodders",
             "spoiled",
@@ -1020,6 +1062,53 @@ def puzzle_people(request, id):
         }
 
     return render(request, "puzzle_people.html", context)
+
+
+@login_required
+def puzzle_escape(request, id):
+    puzzle = get_object_or_404(Puzzle, id=id)
+    user = request.user
+
+    if request.method == "POST":
+        if "unspoil" in request.POST:
+            puzzle.spoiled.remove(user)
+            add_comment(
+                request=request,
+                puzzle=puzzle,
+                author=user,
+                is_system=True,
+                content="Unspoiled " + str(user),
+            )
+        elif "testsolve" in request.POST:
+            session = TestsolveSession(puzzle=puzzle)
+            session.save()
+
+            participation = TestsolveParticipation(session=session, user=user)
+            participation.save()
+
+            add_comment(
+                request=request,
+                puzzle=puzzle,
+                author=user,
+                is_system=True,
+                content="Created testsolve session #{} from escape hatch".format(
+                    session.id
+                ),
+                testsolve_session=session,
+            )
+
+            return redirect(urls.reverse("testsolve_one", args=[session.id]))
+
+    return render(
+        request,
+        "puzzle_escape.html",
+        {
+            "puzzle": puzzle,
+            "spoiled": is_spoiled_on(user, puzzle),
+            "status": status.get_display(puzzle.status),
+            "is_in_testsolving": puzzle.status == status.TESTSOLVING,
+        },
+    )
 
 
 @login_required
@@ -1186,7 +1275,7 @@ def testsolve_finder(request):
             puzzle.unspoiled_count = 0
         for user in users:
             authored_ids = set(user.authored_puzzles.values_list("id", flat=True))
-            editor_ids = set(user.discussing_puzzles.values_list("id", flat=True))
+            editor_ids = set(user.editing_puzzles.values_list("id", flat=True))
             spoiled_ids = set(user.spoiled_puzzles.values_list("id", flat=True))
             for puzzle in puzzles:
                 if puzzle.id in authored_ids:
@@ -1317,6 +1406,13 @@ def testsolve_one(request, id):
                     is_system=False,
                     content=comment_form.cleaned_data["content"],
                 )
+        elif "react_comment" in request.POST:
+            emoji = request.POST.get("emoji")
+            comment = PuzzleComment.objects.get(id=request.POST["react_comment"])
+            # This just lets you react with any string to a comment, but it's
+            # not the end of the world.
+            if emoji and comment:
+                CommentReaction.toggle(emoji, comment, user)
 
         # refresh
         return redirect(urls.reverse("testsolve_one", args=[id]))
@@ -1580,7 +1676,7 @@ def awaiting_editor(request):
 @login_required
 def needs_editor(request):
     needs_editors = Puzzle.objects.annotate(
-        remaining_des=(F("needed_discussion_editors") - Count("discussion_editors"))
+        remaining_des=(F("needed_editors") - Count("editors"))
     ).filter(remaining_des__gt=0)
 
     context = {"needs_editors": needs_editors}
@@ -1623,7 +1719,8 @@ def rounds(request):
         elif "new_round" in request.POST:
             new_round_form = RoundForm(request.POST)
             if new_round_form.is_valid():
-                new_round_form.save()
+                new_round = new_round_form.save()
+                new_round.spoiled.add(user)
 
         elif "add_answer" in request.POST:
             answer_form = AnswerForm(None, request.POST)
@@ -1786,7 +1883,11 @@ def statistics(request):
         ).count()
         answers["rest"] -= answers[tag.name]
 
-    image_base64 = curr_puzzle_graph_b64(request.GET.get("time", "alltime"))
+    target_count = SiteSetting.get_int_setting("TARGET_PUZZLE_COUNT")
+    unreleased_count = SiteSetting.get_int_setting("UNRELEASED_PUZZLE_COUNT")
+    image_base64 = curr_puzzle_graph_b64(
+        request.GET.get("time", "alltime"), target_count
+    )
 
     return render(
         request,
@@ -1798,6 +1899,8 @@ def statistics(request):
             "image_base64": image_base64,
             "past_writing": past_writing,
             "past_testsolving": past_testsolving,
+            "target_count": target_count,
+            "unreleased_count": unreleased_count,
         },
     )
 
@@ -1876,7 +1979,7 @@ def annotate_users_helper(user_list, annotation_kwargs):
 def users(request):
     users = list(User.objects.all().select_related("profile"))
 
-    for key in ["authored", "discussing", "factchecking"]:
+    for key in ["authored", "editing", "factchecking"]:
         annotation_kwargs = dict()
         annotation_kwargs[key + "_active"] = Count(
             key + "_puzzles",

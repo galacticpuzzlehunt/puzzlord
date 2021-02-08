@@ -11,9 +11,9 @@
 
 	<h2>Puzzles {{them.profile.display_name | default:them}} is authoring</h2>
 	{% puzzle_list them.authored_puzzles request.user %}
-	{% if them.discussing_puzzles %}
+	{% if them.editing_puzzles %}
 		<h2>Puzzles {{them.profile.display_name | default:them}} is editing</h2>
-		{% puzzle_list them.discussing_puzzles request.user %}
+		{% puzzle_list them.editing_puzzles request.user %}
 	{% endif %}
 	<h2>Puzzles {{them.profile.display_name | default:them}} is factchecking</h2>
 	{% puzzle_list them.factchecking_puzzles request.user %}

@@ -25,8 +25,8 @@ def make_puzzle_data(puzzles, user, do_query_filter_in):
             is_author=Exists(
                 User.objects.filter(authored_puzzles=OuterRef("pk"), id=user.id)
             ),
-            is_discussing=Exists(
-                User.objects.filter(discussing_puzzles=OuterRef("pk"), id=user.id)
+            is_editing=Exists(
+                User.objects.filter(editing_puzzles=OuterRef("pk"), id=user.id)
             ),
             is_factchecking=Exists(
                 User.objects.filter(factchecking_puzzles=OuterRef("pk"), id=user.id)
@@ -44,7 +44,7 @@ def make_puzzle_data(puzzles, user, do_query_filter_in):
         # This prefetch is super slow.
         # .prefetch_related(
         #     "authors__profile",
-        #     "discussion_editors__profile",
+        #     "editors__profile",
         #     Prefetch(
         #         "tags",
         #         queryset=PuzzleTag.objects.filter(important=True).only("name"),
@@ -58,7 +58,7 @@ def make_puzzle_data(puzzles, user, do_query_filter_in):
 
     for puzzle in puzzles:
         puzzle.opt_authors = []
-        puzzle.opt_discussion_editors = []
+        puzzle.opt_editors = []
         puzzle.prefetched_important_tag_names = []
 
     puzzle_ids = [puzzle.id for puzzle in puzzles]
@@ -88,23 +88,21 @@ def make_puzzle_data(puzzles, user, do_query_filter_in):
         if puzzle_id in id_to_index:
             puzzles[id_to_index[puzzle_id]].opt_authors.append((username, display_name))
 
-    discussionships = User.objects
+    editorships = User.objects
     if do_query_filter_in:
-        discussionships = discussionships.filter(discussing_puzzles__in=puzzle_ids)
-    for username, display_name, puzzle_id in discussionships.values_list(
-        "username", "profile__display_name", "discussing_puzzles"
+        editorships = editorships.filter(editing_puzzles__in=puzzle_ids)
+    for username, display_name, puzzle_id in editorships.values_list(
+        "username", "profile__display_name", "editing_puzzles"
     ):
         if puzzle_id in id_to_index:
-            puzzles[id_to_index[puzzle_id]].opt_discussion_editors.append(
-                (username, display_name)
-            )
+            puzzles[id_to_index[puzzle_id]].opt_editors.append((username, display_name))
 
     for puzzle in puzzles:
         puzzle.authors_html = UserProfile.html_user_list_of_flat(
             puzzle.opt_authors, linkify=False
         )
-        puzzle.discussion_editors_html = UserProfile.html_user_list_of_flat(
-            puzzle.opt_discussion_editors, linkify=False
+        puzzle.editors_html = UserProfile.html_user_list_of_flat(
+            puzzle.opt_editors, linkify=False
         )
 
     return puzzles

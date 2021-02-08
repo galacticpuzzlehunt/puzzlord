@@ -30,6 +30,7 @@ urlpatterns = [
     path("puzzle/<int:id>/answers", views.puzzle_answers, name="puzzle_answers"),
     path("puzzle/<int:id>/tags", views.puzzle_tags, name="puzzle_tags"),
     path("puzzle/<int:id>/postprod", views.puzzle_postprod, name="puzzle_postprod"),
+    path("puzzle/<int:id>/escape", views.puzzle_escape, name="puzzle_escape"),
     path("puzzle/postprodded/<int:id>.zip", views.postprod_zip, name="postprod_zip"),
     path("comment/<int:id>/edit", views.edit_comment, name="edit_comment"),
     path("hint/<int:id>", views.edit_hint, name="edit_hint"),

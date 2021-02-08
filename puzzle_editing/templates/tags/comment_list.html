@@ -25,7 +25,30 @@
 			{% if comment.author.is_current_user and not comment.is_system %}(<a href="{% url "edit_comment" comment.id %}">edit</a>){% endif %}
 		</td>
 		{% endwith %}
-		<td>{{ comment.content|markdown }}</td>
+		<td>
+			{{ comment.content|markdown }}
+			{% if comment.status_change %}
+			<p class="status-change">Status changed to <strong>{{ comment.get_status_change_display }}</strong></p>
+			{% endif %}
+			<form method="post">
+				{% csrf_token %}
+				{% if comment.merged_reactions %}
+				{% for emoji, reactors in comment.merged_reactions.items %}
+				<button type="submit" title="{{ reactors|join:", " }}" class="ghost-button {% if username in reactors %}ghost-selected{% endif %}" name="emoji" value="{{ emoji }}">{{ emoji }}: {{ reactors|length }}</button>
+				{% endfor %}
+				{% endif %}
+				<button type="button" class="ghost-button toggle-show" data-target="reactions-{{ comment.id }}" data-rehide="−😀…">+😀…</button>
+				<span class="hidden" id="reactions-{{ comment.id }}">
+				<input type="hidden" name="react_comment" value="{{ comment.id }}">
+				{% for emoji in emoji_options %}
+					{% if emoji not in comment.merged_reactions %}
+					<input type="submit" class="ghost-button" name="emoji" value="{{ emoji }}"/>
+					{% endif %}
+				{% endfor %}
+				</span>
+			</form>
+			</div>
+		</td>
 	</tr>
 	{% endfor %}
 	</table>
@@ -33,6 +56,52 @@
 	<form method="post">
 		{% csrf_token %}
 		{{ comment_form }}
-		<input type="submit" name="add_comment" value="Add Comment">
+		{% if allow_status_changes %}
+		<p><input type="submit" name="add_comment" value="Add Comment">
+		or
+		<button type="button" class="toggle-show" data-target="comment-changes"
+			data-rehide="Hide buttons to comment and change status">Show buttons to comment and change status together</button></p>
+		<div id="comment-changes" class="hidden">
+			{% with puzzle.get_transitions as transitions %}
+			{% if transitions %}
+			<p>Suggested status changes from current status ({{ puzzle.get_status_display }}):</p>
+			<ul>
+				{% for transition in transitions %}
+				<li>
+					<button type="submit" name="add_comment_change_status" value="{{ transition.status }}">
+						Comment + {{ transition.description }}
+					</button>
+					(send to {{ transition.status_display }})
+				</li>
+				{% endfor %}
+			</ul>
+
+			<button type="button" class="toggle-show" data-target="comment-all-statuses"
+				data-rehide="Hide all status changes">Show all status changes</button>
+			<ul id="comment-all-statuses" class="hidden">
+				{% for status in all_statuses %}
+				<li>
+					<button type="submit" name="add_comment_change_status" value="{{ status.value }}">
+						Comment + Send to {{ status.display }}
+					</button>
+				</li>
+				{% endfor %}
+			</ul>
+			{% else %}
+			<ul id="comment-all-statuses">
+				{% for status in all_statuses %}
+				<li>
+					<button type="submit" name="add_comment_change_status" value="{{ status.value }}">
+						Comment + Send to {{ status.display }}
+					</button>
+				</li>
+				{% endfor %}
+			</ul>
+			{% endif %}
+			{% endwith %}
+		</div>
+		{% else %}
+		<p><input type="submit" name="add_comment" value="Add Comment"></p>
+		{% endif %}
 	</form>
 </section>

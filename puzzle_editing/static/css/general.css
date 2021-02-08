@@ -381,6 +381,25 @@ table.puzzle-table td p, table.puzzle-table td pre {
 }
 .by-author { background-color: var(--by-author-color); }
 .testsolve { background-color: var(--testsolve-color); }
+.status-change {
+	color: var(--deemphasized-color);
+	border: 1px solid var(--border-color);
+	border-radius: 3px;
+	padding: 0.25em;
+}
+.status-change::before {
+	content: "→ ";
+}
+.ghost-button {
+	background-color: transparent;
+	color: inherit;
+	border: 1px dashed var(--border-color);
+	border-radius: 3px;
+}
+.ghost-selected {
+	border: 3px double var(--border-color);
+	font-weight: bold;
+}
 
 /* statistics */
 .flex-row {

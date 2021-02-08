@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% load puzzle_list %}
 {% load testsolve_session_list %}
+{% load markdown %}
 {% block main %}
 	<h1>Welcome to Puzzlord!</h1>
+	{% if announcement %}{{ announcement|markdown }}{% endif %}
 	{% if inbox_puzzles %}
 	<h2>Unread spoiled puzzles</h2>
 	{% puzzle_list inbox_puzzles request.user %}

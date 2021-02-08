@@ -7,6 +7,12 @@ System message (on behalf of {{ author.username }}):
 
 {{ content|markdown }}
 
+{% if status_change %}
+<p>
+Status changed to {{ status_change }}
+</p>
+{% endif %}
+
 <p>
 Puzzle: {{ request.scheme }}://{{ request.get_host }}{% url 'puzzle' puzzle.id %}
 </p>

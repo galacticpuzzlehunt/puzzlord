@@ -35,21 +35,10 @@ timetypes = {
 }
 
 
-def parse_comment(comment: str):
-    if comment == "Created puzzle":
-        return status.INITIAL_IDEA
-    elif comment.startswith("Status changed to "):
-        if comment[18:] in rev_status_map:
-            return rev_status_map[comment[18:]]
-        else:
-            print("Missing status in map:", comment)
-            return None
-
-
 exclude = [status.DEAD, status.DEFERRED, status.INITIAL_IDEA]
 
 
-def curr_puzzle_graph_b64(time: str):
+def curr_puzzle_graph_b64(time: str, target_count):
     comments = PuzzleComment.objects.filter(is_system=True).order_by("date")
     counts = Counter()
     curr_status = {}
@@ -60,7 +49,7 @@ def curr_puzzle_graph_b64(time: str):
     ]
 
     for comment in comments:
-        new_status = parse_comment(comment.content)
+        new_status = comment.status_change
         if new_status:
             counts[new_status] += 1
             if comment.puzzle.id in curr_status:
@@ -79,7 +68,8 @@ def curr_puzzle_graph_b64(time: str):
     colormap = [i for i in matplotlib.cm.get_cmap("tab20").colors]
     col = (colormap[::2] + colormap[1::2])[: len(status.STATUSES) - len(exclude)]
     ax.stackplot(x, np.transpose(y), labels=labels, colors=col[-1::-1])
-    ax.plot(x, [195 for i in x], color=(0, 0, 0))
+    if target_count is not None:
+        ax.plot(x, [target_count for i in x], color=(0, 0, 0))
     handles, plabels = ax.get_legend_handles_labels()
     ax.legend(handles[::-1], plabels[::-1], loc="upper left")
     buf = BytesIO()

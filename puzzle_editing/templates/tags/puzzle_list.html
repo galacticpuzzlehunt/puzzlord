@@ -25,14 +25,15 @@
 			<th>Editors</th>
 			<th>Last Updated</th>
 			<th>Last Comment</th>
+			<th>🏃</th>
 		</tr>
 		{% for puzzle in puzzles %}
 		<tr
 			class="puzzle-row {% if puzzle.status == dead_status %}dead{% elif puzzle.status == deferred_status %}deferred{% elif puzzle.status in past_needs_solution_statuses %}past_needs_solution{% endif %} {% if puzzle.is_spoiled %}spoiled {% if not puzzle.last_visited_date or puzzle.last_comment_date and puzzle.last_comment_date > puzzle.last_visited_date %}unvisited{% endif %}{% endif %} {% if puzzle.has_answer %}answered{%endif%}">
 			{% if puzzle.is_author %}
 			<td sorttable_customkey="1" title="You are an author">📝</td>
-			{% elif puzzle.is_discussing %}
-			<td sorttable_customkey="2" title="You are a discussion editor">💬</td>
+			{% elif puzzle.is_editing %}
+			<td sorttable_customkey="2" title="You are an editor">💬</td>
 			{% elif puzzle.is_factchecking %}
 			<td sorttable_customkey="3" title="You are a factchecker">🛂</td>
 			{% elif puzzle.is_postprodding %}
@@ -49,7 +50,7 @@
 			<td>{{ puzzle.authors_html }}</td>
 			<td class="small-md">{{ puzzle.summary }}</td>
 			<td sorttable_customkey="{{ puzzle.priority }}">{{ puzzle.get_priority_display }}</td>
-			<td>{{ puzzle.opt_discussion_editors|length }} / {{ puzzle.needed_discussion_editors }}: {{ puzzle.discussion_editors_html }}</td>
+			<td>{{ puzzle.opt_editors|length }} / {{ puzzle.needed_editors }}: {{ puzzle.editors_html }}</td>
 			<td sorttable_customkey="{{ puzzle.last_updated.timestamp }}" class="timestamp"
 				data-timestamp="{{ puzzle.last_updated.timestamp }}">{{ puzzle.last_updated }}</td>
 			{% if puzzle.last_comment_date %}
@@ -58,6 +59,7 @@
 			{% else %}
 			<td sorttable_customkey="0">—</td>
 			{% endif %}
+			<td><a href="{% url 'puzzle_escape' puzzle.id %}">🏃</a></td>
 		{% endif %}
 		</tr>
 		{% endfor %}

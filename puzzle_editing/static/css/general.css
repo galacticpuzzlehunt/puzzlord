@@ -47,7 +47,7 @@
 
 /* general */
 body {
-	font-family: sans-serif;
+	font-family: 'Work Sans', sans-serif;
 	margin: 0;
 	padding: 0;
 	color: var(--text-color);
@@ -167,8 +167,8 @@ nav a:visited {
 main {
 	padding: 0.75em;
 }
-h1 { font-size: 140%; }
-h2 { font-size: 120%; font-weight: normal; }
+h1 { font-size: 140%; font-weight: 900 }
+h2 { font-size: 120%; font-weight: 700; }
 div.table-wrap {
 	max-width: 100%;
 	overflow: auto;

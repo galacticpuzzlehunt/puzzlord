@@ -17,4 +17,5 @@ def nav_link(current_path, url_name, text):
         "url": url,
         "selected": selected,
         "text": text,
+        "name": url_name,
     }

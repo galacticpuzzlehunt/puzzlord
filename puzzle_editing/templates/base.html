@@ -18,7 +18,7 @@
 			{% block nav %}
 			{% with request.path as current_path %}
 			<div class="nav-links">
-				{% nav_link current_path 'index' 'Puzzlord' %}
+				<a href="/"><img class="logo" src="{% static 'puzzlord-logo.png' %}" alt="Puzzlord"/></a>
 				{% nav_link current_path 'new' 'New Puzzle' %}
 				{% nav_link current_path 'authored' 'Your Puzzles' %}
 				{% nav_link current_path 'testsolve_main' 'Testsolve' %}
@@ -45,11 +45,11 @@
 				</select>
 				<div class="nav-login">
 				{% if request.user.is_authenticated %}
-				Logged in as <a href="{% url 'account' %}">{{ request.user.username }}</a>
-				(<a href="{% url 'logout' %}">Logout</a>)
+				Logged in as <a href="{% url 'account' %}">{{ request.user.username }}</a><br/>
+				<a class="logout" href="{% url 'logout' %}">Logout</a>
 				{% else %}
-				<a href="{% url 'login' %}">Login</a> or
-				<a href="{% url 'register' %}">Register</a>
+				<a class="login" href="{% url 'login' %}">Login</a> or
+				<a class="register" href="{% url 'register' %}">Register</a>
 				{% endif %}
 				</div>
 			</div>

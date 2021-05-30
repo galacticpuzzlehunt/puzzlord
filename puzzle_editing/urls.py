@@ -47,6 +47,7 @@ urlpatterns = [
     path("rounds/<int:id>/edit", views.edit_round, name="edit_round"),
     path("rounds/<int:id>/bulk_add", views.bulk_add_answers, name="bulk_add_answers"),
     path("users", views.users, name="users"),
+    path("users/editors", views.editors, name="editors"),
     path("users_statuses", views.users_statuses, name="users_statuses"),
     path("user/<str:username>", views.user, name="user"),
     path("account", views.account, name="account"),

@@ -95,6 +95,9 @@ class UserProfile(models.Model):
             linkify,
         )
 
+    def __str__(self):
+        return "Profile of {}".format(self.user)
+
 
 class Round(models.Model):
     """A round of answers feeding into the same metapuzzle or set of metapuzzles."""
@@ -365,6 +368,9 @@ class PuzzleVisited(models.Model):
     puzzle = models.ForeignKey(Puzzle, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     date = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return "{} visited {}".format(self.user.username, self.puzzle)
 
 
 class TestsolveSession(models.Model):

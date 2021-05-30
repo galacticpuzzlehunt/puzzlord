@@ -78,6 +78,12 @@ def past_testsolving(status):
     ) <= get_status_rank(DONE)
 
 
+# a partition of the statuses that excludes Done, Deferred, Dead for some queries
+PRE_TESTSOLVING_STATUSES = STATUSES[: STATUSES.index(REVISING_POST_TESTSOLVING)]
+POST_TESTSOLVING_STATUSES = STATUSES[
+    STATUSES.index(REVISING_POST_TESTSOLVING) : STATUSES.index(DONE)
+]
+
 # Possible blockers:
 
 EDITORS = "editors"

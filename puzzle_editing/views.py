@@ -624,10 +624,7 @@ def puzzle(request, id):
             # Not worth crashing over. Just do our best.
             status_change_dirty = request.POST.get("add_comment_change_status")
             status_change = ""
-            if (
-                status_change_dirty
-                and status_change_dirty in status.BLOCKERS_AND_TRANSITIONS
-            ):
+            if status_change_dirty and status_change_dirty in status.DESCRIPTIONS:
                 status_change = status_change_dirty
             if comment_form.is_valid():
                 add_comment(
@@ -638,6 +635,9 @@ def puzzle(request, id):
                     content=comment_form.cleaned_data["content"],
                     status_change=status_change,
                 )
+                if status_change:
+                    puzzle.status = status_change
+                    puzzle.save()
         elif "react_comment" in request.POST:
             emoji = request.POST.get("emoji")
             comment = PuzzleComment.objects.get(id=request.POST["react_comment"])
@@ -2030,6 +2030,52 @@ def users(request):
         user.is_meta_editor = user.has_perm("puzzle_editing.change_round")
 
     return render(request, "users.html", {"users": users,})
+
+
+@login_required
+def editors(request):
+    users = (
+        User.objects.all()
+        .annotate(
+            editing_all=Count("editing_puzzles", distinct=True,),
+            editing_pre_testsolving=Count(
+                "editing_puzzles",
+                filter=Q(editing_puzzles__status__in=status.PRE_TESTSOLVING_STATUSES),
+                distinct=True,
+            ),
+            editing_post_testsolving=Count(
+                "editing_puzzles",
+                filter=Q(editing_puzzles__status__in=status.POST_TESTSOLVING_STATUSES),
+                distinct=True,
+            ),
+            editing_done=Count(
+                "editing_puzzles",
+                filter=Q(editing_puzzles__status=status.DONE),
+                distinct=True,
+            ),
+            editing_deferred=Count(
+                "editing_puzzles",
+                filter=Q(editing_puzzles__status=status.DEFERRED),
+                distinct=True,
+            ),
+            editing_dead=Count(
+                "editing_puzzles",
+                filter=Q(editing_puzzles__status=status.DEAD),
+                distinct=True,
+            ),
+        )
+        .select_related("profile")
+    )
+
+    users = list(users)
+    for user in users:
+        user.full_display_name = get_full_display_name(user)
+        # FIXME You can do this quickly in Django 3.x
+        user.is_meta_editor = user.has_perm("alientoyshop.change_round")
+
+    users = [user for user in users if user.is_meta_editor or user.editing_all > 0]
+
+    return render(request, "editors.html", {"users": users,})
 
 
 @login_required

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load markdown %}
+{% block title %}
+Editors
+{% endblock %}
+{% block main %}
+	<h1>Editors + Editing Puzzles</h1>
+	<p>Shows all users with the editor role or editing at least one puzzle.</p>
+	<p>* "Active" means any status other than Deferred, Dead, or Done.</p>
+	<div class="table-wrap">
+	<table class="classic sortable">
+		<thead>
+		<tr>
+			<th colspan="2"></th>
+			<th colspan="2">Active*</th>
+			<th colspan="3" class="deemph">Inactive</th>
+			<th></th>
+		</tr>
+		<tr>
+			<th>User</th>
+			<th>Role</th>
+			<th>&le; Testsolving</th>
+			<th>&gt; Testsolving</th>
+			<th class="deemph">Deferred</th>
+			<th class="deemph">Dead</th>
+			<th class="deemph">Done</th>
+			<th>Total</th>
+		</tr>
+		</thead>
+		<tbody>
+		{% for user in users %}
+		<tr>
+			<td><a href="{% url 'user' user.username %}">{{ user.full_display_name }}</a></td>
+			<td>
+				{% if user.is_staff %}
+				Superuser
+				{% elif user.is_meta_editor %}
+				Meta Editor
+				{% endif %}
+			</td>
+			<td>{{ user.editing_pre_testsolving }}</td>
+			<td>{{ user.editing_post_testsolving }}</td>
+			<td class="deemph">{{ user.editing_deferred }}</td>
+			<td class="deemph">{{ user.editing_dead }}</td>
+			<td class="deemph">{{ user.editing_done }}</td>
+			<td>{{ user.editing_all }}</td>
+		</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+	</div>
+{% endblock %}

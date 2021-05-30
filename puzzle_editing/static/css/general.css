@@ -373,6 +373,17 @@ table.puzzle-table td p, table.puzzle-table td pre {
 }
 
 /* comments */
+blockquote {
+	margin: 1em 0;
+	border-left: 3px solid var(--border-color);
+	padding: 0.5em 1em;
+}
+blockquote > p:first-child {
+	margin-top: 0;
+}
+blockquote > p:last-child {
+	margin-bottom: 0;
+}
 .date {
 	font-size: 80%;
 }
@@ -483,7 +494,6 @@ table.puzzle-table td p, table.puzzle-table td pre {
 .hide-test-spoiled:checked + label + div > table tr.test-spoiled {
 	display: none;
 }
-.show-delete-answer:checked ~
 .deemph {
 	color: var(--deemphasized-color);
 	font-size: 80%;

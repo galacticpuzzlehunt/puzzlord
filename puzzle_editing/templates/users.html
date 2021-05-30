@@ -1,17 +1,16 @@
 {% extends "base.html" %}
-{% load puzzle_list %}
 {% load markdown %}
 {% block title %}
 Users
 {% endblock %}
 {% block main %}
 	<h1>Users</h1>
-	<p>* "Active" means any status other than Deferred, Dead, or Done.</p>
+	<p>* "Active" means any status other than Deferred, Dead, or Done. See also <a href="{% url 'users_statuses' %}">Users &times; Statuses</a>, more detailed <a href="{% url 'editors' %}">Editors + Editing Puzzles</a></p>
 	<div class="table-wrap">
 	<table class="classic sortable">
 		<thead>
 		<tr>
-			<th colspan="2">
+			<th colspan="2"></th>
 			<th colspan="4">Authored</th>
 			<th colspan="4">Editing</th>
 			<th colspan="4">Factchecking</th>

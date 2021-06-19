@@ -90,9 +90,15 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",},
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
 ]
 
 
@@ -157,7 +163,11 @@ LOGGING = {
         },
     },
     "loggers": {
-        "django": {"handlers": ["django"], "level": "DEBUG", "propagate": True,},
+        "django": {
+            "handlers": ["django"],
+            "level": "DEBUG",
+            "propagate": True,
+        },
         "puzzles.puzzle": {
             "handlers": ["puzzle"],
             "level": "DEBUG",
@@ -184,3 +194,6 @@ HUNT_TIME = datetime.datetime(
     microsecond=0,
     tzinfo=datetime.timezone.utc,
 )
+
+# Ensure MEDIA_ROOT and MEDIA_URL are set appropriately when enabling file uploads.
+ENABLE_PUZZLE_FILE_UPLOADS = False

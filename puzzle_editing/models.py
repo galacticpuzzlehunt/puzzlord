@@ -1,3 +1,6 @@
+import os
+import random
+import time
 from enum import Enum
 
 import django.urls as urls
@@ -259,10 +262,37 @@ class Puzzle(models.Model):
         ),
         default=3,
     )
+
     content = models.TextField(
-        blank=True, help_text="The puzzle itself. An external link is fine."
+        blank=True,
+        help_text="The puzzle itself. An external link is fine.",
     )
-    solution = models.TextField(blank=True)
+
+    def uploaded_content_path(instance, filename):
+        _, ext = os.path.splitext(filename.lower())
+        return f"uploaded_content/{instance.id}/{int(time.time())}-{random.randrange(1000000)}{ext}"
+
+    uploaded_content = models.FileField(
+        upload_to=uploaded_content_path,
+        null=True,
+        blank=True,
+        help_text="An uploaded file of the puzzle itself. It may be a text file, PDF, etc. or it may be a zip file containing an index.html page as well as additional assets.",
+    )
+
+    solution = models.TextField(
+        blank=True,
+    )
+
+    def uploaded_solution_path(instance, filename):
+        _, ext = os.path.splitext(filename.lower())
+        return f"uploaded_solution/{instance.id}/{int(time.time())}-{random.randrange(1000000)}{ext}"
+
+    uploaded_solution = models.FileField(
+        upload_to=uploaded_solution_path,
+        null=True,
+        blank=True,
+        help_text="An uploaded file of the puzzle solution. It may be a text file, PDF, etc. or it may be a zip file containing an index.html page as well as additional assets.",
+    )
 
     def get_emails(self, exclude_emails=()):
         emails = set(self.authors.values_list("email", flat=True))
@@ -352,7 +382,8 @@ class StatusSubscription(models.Model):
     """An indication to email a user when any puzzle enters this status."""
 
     status = models.CharField(
-        max_length=status.MAX_LENGTH, choices=status.DESCRIPTIONS.items(),
+        max_length=status.MAX_LENGTH,
+        choices=status.DESCRIPTIONS.items(),
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 

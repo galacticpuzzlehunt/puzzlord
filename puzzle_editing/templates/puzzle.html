@@ -2,6 +2,7 @@
 {% load user_list %}
 {% load comment_list %}
 {% load markdown %}
+{% load upload_url %}
 {% block title %}
 	{{ puzzle.spoiler_free_title }}
 {% endblock %}
@@ -161,26 +162,34 @@
 		</table>
 
 		<h2>Puzzle <button type="button" class="toggle-show" data-target="content-form" data-rehide="Hide editing">Edit</button></h2>
-		<form method="post" id="content-form" class="hidden">
+		<form method="post" id="content-form" class="hidden" enctype="multipart/form-data">
 			{% csrf_token %}
-			{{ content_form }}
+			<table>
+				{{ content_form.as_table }}
+			</table>
 			<input type="submit" name="edit_content" value="Submit">
 		</form>
 		{% if puzzle.has_postprod %}<b>Since the puzzle has been postprodded, <a href="https://FIXME.example.com/{{puzzle.postprod.slug}}/">the postprodded puzzle</a> should be used rather than this field.</b>{% endif %}
 		{% if puzzle.content %}
 		{{ puzzle.content|markdown }}
+		{% elif puzzle.uploaded_content %}
+		Link to puzzle content: <a href="{{ puzzle.uploaded_content|upload_url }}" target="_blank">{{ puzzle.uploaded_content|upload_url }}</a>
 		{% else %}
 		<div class="empty">(no puzzle yet)</div>
 		{% endif %}
 		<h2>Solution <button type="button" class="toggle-show" data-target="solution-form" data-rehide="Hide editing">Edit</button></h2>
-		<form method="post" id="solution-form" class="hidden">
+		<form method="post" id="solution-form" class="hidden" enctype="multipart/form-data">
 			{% csrf_token %}
-			{{ solution_form }}
+			<table>
+				{{ solution_form.as_table }}
+			</table>
 			<input type="submit" name="edit_solution" value="Submit">
 		</form>
 		{% if puzzle.has_postprod %}<b>Since the puzzle has been postprodded, <a href="https://FIXME.example.com/{{puzzle.postprod.slug}}/solution/">the postprodded solution</a> should be used rather than this field.</b>{% endif %}
 		{% if puzzle.solution %}
 		{{ puzzle.solution|markdown }}
+		{% elif puzzle.uploaded_solution %}
+		Link to solution: <a href="{{ puzzle.uploaded_solution|upload_url }}" target="_blank">{{ puzzle.uploaded_solution|upload_url }}</a>
 		{% else %}
 		<div class="empty">(no solution yet)</div>
 		{% endif %}

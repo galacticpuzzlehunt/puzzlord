@@ -58,11 +58,16 @@ from puzzle_editing.models import UserProfile
 def get_sessions_with_joined_and_current(user):
     return TestsolveSession.objects.annotate(
         joined=Exists(
-            TestsolveParticipation.objects.filter(session=OuterRef("pk"), user=user,)
+            TestsolveParticipation.objects.filter(
+                session=OuterRef("pk"),
+                user=user,
+            )
         ),
         current=Exists(
             TestsolveParticipation.objects.filter(
-                session=OuterRef("pk"), user=user, ended=None,
+                session=OuterRef("pk"),
+                user=user,
+                ended=None,
             )
         ),
     )
@@ -94,10 +99,12 @@ def index(request):
         return render(request, "index_not_logged_in.html")
 
     blocked_on_author_puzzles = Puzzle.objects.filter(
-        authors=user, status__in=status.STATUSES_BLOCKED_ON_AUTHORS,
+        authors=user,
+        status__in=status.STATUSES_BLOCKED_ON_AUTHORS,
     )
     blocked_on_editor_puzzles = Puzzle.objects.filter(
-        editors=user, status__in=status.STATUSES_BLOCKED_ON_EDITORS,
+        editors=user,
+        status__in=status.STATUSES_BLOCKED_ON_EDITORS,
     )
     current_sessions = get_sessions_with_joined_and_current(user).filter(
         joined=True, current=True
@@ -194,7 +201,8 @@ class RegisterForm(forms.ModelForm):
         password2 = self.cleaned_data.get("password2")
         if password1 and password2 and password1 != password2:
             raise forms.ValidationError(
-                "The two password fields didn't match.", code="password_mismatch",
+                "The two password fields didn't match.",
+                code="password_mismatch",
             )
         return password2
 
@@ -202,7 +210,8 @@ class RegisterForm(forms.ModelForm):
         site_password = self.cleaned_data.get("site_password")
         if site_password and site_password != settings.SITE_PASSWORD:
             raise forms.ValidationError(
-                "The site password was incorrect.", code="password_mismatch",
+                "The site password was incorrect.",
+                code="password_mismatch",
             )
         return site_password
 
@@ -397,7 +406,10 @@ def authored(request):
     return render(
         request,
         "authored.html",
-        {"puzzles": puzzles, "editing_puzzles": editing_puzzles,},
+        {
+            "puzzles": puzzles,
+            "editing_puzzles": editing_puzzles,
+        },
     )
 
 
@@ -414,13 +426,37 @@ class PuzzleCommentForm(forms.Form):
 class PuzzleContentForm(forms.ModelForm):
     class Meta:
         model = Puzzle
-        fields = ["content"]
+        fields = ["content", "uploaded_content"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["uploaded_content"].widget.attrs["disabled"] = False
+        if not settings.ENABLE_PUZZLE_FILE_UPLOADS:
+            del self.fields["uploaded_content"]
+
+    def clean(self):
+        super(PuzzleContentForm, self).clean()
+        if self.cleaned_data["content"] and self.cleaned_data.get("uploaded_content"):
+            self.cleaned_data["content"] = ""
+        return self.cleaned_data
 
 
 class PuzzleSolutionForm(forms.ModelForm):
     class Meta:
         model = Puzzle
-        fields = ["solution"]
+        fields = ["solution", "uploaded_solution"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["uploaded_solution"].widget.attrs["disabled"] = False
+        if not settings.ENABLE_PUZZLE_FILE_UPLOADS:
+            del self.fields["uploaded_solution"]
+
+    def clean(self):
+        super(PuzzleSolutionForm, self).clean()
+        if self.cleaned_data["solution"] and self.cleaned_data.get("uploaded_solution"):
+            self.cleaned_data["solution"] = ""
+        return self.cleaned_data
 
 
 class PuzzlePriorityForm(forms.ModelForm):
@@ -507,8 +543,8 @@ def add_comment(
         )
 
 
-@login_required  # noqa: C901
-def puzzle(request, id):
+@login_required
+def puzzle(request, id):  # noqa: C901
     puzzle = get_object_or_404(Puzzle, id=id)
     user = request.user
 
@@ -603,15 +639,33 @@ def puzzle(request, id):
             puzzle.postprodders.remove(user)
             add_system_comment_here("Removed postprodder " + str(user))
         elif "edit_content" in request.POST:
-            form = PuzzleContentForm(request.POST, instance=puzzle)
+            form = PuzzleContentForm(request.POST, request.FILES, instance=puzzle)
             if form.is_valid():
                 form.save()
-                add_system_comment_here("Edited puzzle content")
+                if puzzle.uploaded_content:
+                    if os.path.splitext(puzzle.uploaded_content.path)[1] == ".zip":
+                        utils.extract_uploaded_zip_in_place(
+                            puzzle.uploaded_content.path
+                        )
+                    add_system_comment_here(
+                        f"Uploaded [puzzle content]({utils.get_upload_url(puzzle.uploaded_content)})"
+                    )
+                else:
+                    add_system_comment_here("Edited puzzle content")
         elif "edit_solution" in request.POST:
-            form = PuzzleSolutionForm(request.POST, instance=puzzle)
+            form = PuzzleSolutionForm(request.POST, request.FILES, instance=puzzle)
             if form.is_valid():
                 form.save()
-                add_system_comment_here("Edited puzzle solution")
+                if puzzle.uploaded_solution:
+                    if os.path.splitext(puzzle.uploaded_solution.path)[1] == ".zip":
+                        utils.extract_uploaded_zip_in_place(
+                            puzzle.uploaded_solution.path
+                        )
+                    add_system_comment_here(
+                        f"Uploaded a [puzzle solution]({utils.get_upload_url(puzzle.uploaded_solution)})"
+                    )
+                else:
+                    add_system_comment_here("Edited puzzle solution")
         elif "add_hint" in request.POST:
             form = PuzzleHintForm(request.POST)
             if form.is_valid():
@@ -930,7 +984,11 @@ def puzzle_postprod(request, id):
     return render(
         request,
         "puzzle_postprod.html",
-        {"puzzle": puzzle, "form": form, "spoiled": spoiled,},
+        {
+            "puzzle": puzzle,
+            "form": form,
+            "spoiled": spoiled,
+        },
     )
 
 
@@ -1117,11 +1175,21 @@ def edit_comment(request, id):
 
     if request.user != comment.author:
         return render(
-            request, "edit_comment.html", {"comment": comment, "not_author": True,}
+            request,
+            "edit_comment.html",
+            {
+                "comment": comment,
+                "not_author": True,
+            },
         )
     elif comment.is_system:
         return render(
-            request, "edit_comment.html", {"comment": comment, "is_system": True,}
+            request,
+            "edit_comment.html",
+            {
+                "comment": comment,
+                "is_system": True,
+            },
         )
 
     if request.method == "POST":
@@ -1139,7 +1207,10 @@ def edit_comment(request, id):
     return render(
         request,
         "edit_comment.html",
-        {"comment": comment, "form": PuzzleCommentForm({"content": comment.content}),},
+        {
+            "comment": comment,
+            "form": PuzzleCommentForm({"content": comment.content}),
+        },
     )
 
 
@@ -1162,7 +1233,10 @@ def edit_hint(request, id):
     return render(
         request,
         "edit_hint.html",
-        {"hint": hint, "form": PuzzleHintForm(instance=hint),},
+        {
+            "hint": hint,
+            "form": PuzzleHintForm(instance=hint),
+        },
     )
 
 
@@ -1295,7 +1369,11 @@ def testsolve_finder(request):
     return render(
         request,
         "testsolve_finder.html",
-        {"puzzles": puzzles, "users": users, "missing_usernames": missing_usernames,},
+        {
+            "puzzles": puzzles,
+            "users": users,
+            "missing_usernames": missing_usernames,
+        },
     )
 
 
@@ -1347,7 +1425,9 @@ def testsolve_one(request, id):
 
         elif "do_guess" in request.POST:
             participation = get_object_or_404(
-                TestsolveParticipation, session=session, user=user,
+                TestsolveParticipation,
+                session=session,
+                user=user,
             )
             guess_form = GuessForm(request.POST)
             if guess_form.is_valid():
@@ -1359,7 +1439,10 @@ def testsolve_one(request, id):
                 )
 
                 guess_model = TestsolveGuess(
-                    session=session, user=user, guess=guess, correct=correct,
+                    session=session,
+                    user=user,
+                    guess=guess,
+                    correct=correct,
                 )
                 guess_model.save()
 
@@ -1379,7 +1462,8 @@ def testsolve_one(request, id):
                     session.save()
                 else:
                     message = "{} answer guess: {}".format(
-                        "Correct" if correct else "Incorrect", guess,
+                        "Correct" if correct else "Incorrect",
+                        guess,
                     )
                     add_comment(
                         request=request,
@@ -1621,7 +1705,8 @@ def testsolve_finish(request, id):
 @login_required
 def postprod(request):
     postprodding = Puzzle.objects.filter(
-        status=status.NEEDS_POSTPROD, postprodders=request.user,
+        status=status.NEEDS_POSTPROD,
+        postprodders=request.user,
     )
     needs_postprod = Puzzle.objects.annotate(
         has_postprodder=Exists(User.objects.filter(postprodding_puzzles=OuterRef("pk")))
@@ -1753,7 +1838,12 @@ def rounds(request):
     ]
 
     return render(
-        request, "rounds.html", {"rounds": rounds, "new_round_form": RoundForm(),}
+        request,
+        "rounds.html",
+        {
+            "rounds": rounds,
+            "new_round_form": RoundForm(),
+        },
     )
 
 
@@ -1815,7 +1905,13 @@ def bulk_add_answers(request, id):
 
         return redirect(urls.reverse("bulk_add_answers", args=[id]))
 
-    return render(request, "bulk_add_answers.html", {"round": round,})
+    return render(
+        request,
+        "bulk_add_answers.html",
+        {
+            "round": round,
+        },
+    )
 
 
 @login_required
@@ -1939,7 +2035,14 @@ def single_tag(request, id):
         label = "1 puzzle"
     else:
         label = "{} puzzles".format(count)
-    return render(request, "single_tag.html", {"tag": tag, "count_label": label,})
+    return render(
+        request,
+        "single_tag.html",
+        {
+            "tag": tag,
+            "count_label": label,
+        },
+    )
 
 
 @login_required
@@ -1954,7 +2057,12 @@ def edit_tag(request, id):
         else:
             return render(request, "edit_tag.html", {"form": form, "tag": tag})
     return render(
-        request, "edit_tag.html", {"form": PuzzleTagForm(instance=tag), "tag": tag,}
+        request,
+        "edit_tag.html",
+        {
+            "form": PuzzleTagForm(instance=tag),
+            "tag": tag,
+        },
     )
 
 
@@ -2029,7 +2137,13 @@ def users(request):
         # FIXME You can do this quickly in Django 3.x
         user.is_meta_editor = user.has_perm("puzzle_editing.change_round")
 
-    return render(request, "users.html", {"users": users,})
+    return render(
+        request,
+        "users.html",
+        {
+            "users": users,
+        },
+    )
 
 
 @login_required
@@ -2037,7 +2151,10 @@ def editors(request):
     users = (
         User.objects.all()
         .annotate(
-            editing_all=Count("editing_puzzles", distinct=True,),
+            editing_all=Count(
+                "editing_puzzles",
+                distinct=True,
+            ),
             editing_pre_testsolving=Count(
                 "editing_puzzles",
                 filter=Q(editing_puzzles__status__in=status.PRE_TESTSOLVING_STATUSES),
@@ -2075,7 +2192,13 @@ def editors(request):
 
     users = [user for user in users if user.is_meta_editor or user.editing_all > 0]
 
-    return render(request, "editors.html", {"users": users,})
+    return render(
+        request,
+        "editors.html",
+        {
+            "users": users,
+        },
+    )
 
 
 @login_required
@@ -2127,5 +2250,15 @@ def preview_markdown(request):
         output = render_to_string(
             "preview_markdown.html", {"input": request.body.decode("utf-8")}
         )
-        return JsonResponse({"success": True, "output": output,})
-    return JsonResponse({"success": False, "error": "No markdown input received",})
+        return JsonResponse(
+            {
+                "success": True,
+                "output": output,
+            }
+        )
+    return JsonResponse(
+        {
+            "success": False,
+            "error": "No markdown input received",
+        }
+    )

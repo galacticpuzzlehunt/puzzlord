@@ -2,6 +2,7 @@
 {% load user_list %}
 {% load comment_list %}
 {% load markdown %}
+{% load upload_url %}
 {% block title %}
 	Testsolving {{ session.puzzle }}
 {% endblock %}
@@ -96,6 +97,8 @@ Past guesses:
 {% if session.puzzle.has_postprod %}<b>Since the puzzle has been postprodded, <a href="https://postprod.hidden.institute/pppzzlvwr21/{{session.puzzle.postprod.slug}}/">the postprodded puzzle</a> should be used rather than this field.</b>{% endif %}
 {% if session.puzzle.content %}
 {{ session.puzzle.content|markdown }}
+{% elif session.puzzle.uploaded_content %}
+Link to puzzle content: <a href="{{ session.puzzle.uploaded_content|upload_url }}" target="_blank">{{ session.puzzle.uploaded_content|upload_url }}</a>
 {% else %}
 <div class="empty">(no puzzle yet)</div>
 {% endif %}

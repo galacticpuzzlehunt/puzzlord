@@ -1,8 +1,8 @@
 {% load markdown %}
 <p>{% if is_system %}
-System message (on behalf of {{ author.username }}):
+System message (on behalf of {{ author.profile.display_name }}):
 {% else %}
-{{ author.username }} wrote:
+{{ author.profile.display_name }} wrote:
 {% endif %}</p>
 
 {{ content|markdown }}

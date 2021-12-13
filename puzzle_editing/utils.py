@@ -12,6 +12,21 @@ from django.core.management.base import CommandError
 from puzzle_editing.models import PuzzlePostprod
 
 
+def extract_uploaded_zip_in_place(zip_path):
+    dir_path = os.path.splitext(zip_path)[0]
+    if not os.path.isdir(dir_path):
+        os.mkdir(dir_path)
+        with ZipFile(zip_path, "r") as f:
+            f.extractall(dir_path)
+
+
+def get_upload_url(file_field):
+    _, ext = os.path.splitext(file_field.path)
+    if ext == ".zip":
+        return file_field.url[:-4] + "/"
+    return file_field.url
+
+
 def get_latest_zip(pp):
     try:
         repo = git.Repo.init(settings.HUNT_REPO)

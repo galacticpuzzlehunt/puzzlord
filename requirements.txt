@@ -34,7 +34,7 @@ matplotlib==3.3.1
     # via -r requirements.in
 newrelic==5.16.1.146
     # via -r requirements.in
-numpy==1.19.1
+numpy==1.21.0
     # via
     #   -r requirements.in
     #   matplotlib

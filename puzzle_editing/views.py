@@ -1666,9 +1666,6 @@ def awaiting_editor(request):
         "awaiting_editor.html",
         {
             "puzzles": Puzzle.objects.filter(status=status.AWAITING_EDITOR)
-            | Puzzle.objects.filter(
-                tags__name="edit me"
-            )  # TODO: remove this when we've moved to the new system
         },
     )
 

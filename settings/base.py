@@ -30,6 +30,8 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
+AUTH_USER_MODEL = "puzzle_editing.User"
+
 INSTALLED_APPS = [
     "puzzle_editing.apps.PuzzleEditingConfig",
     "django.contrib.admin",
@@ -82,6 +84,8 @@ DATABASES = {
     }
 }
 
+DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
+
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
@@ -90,9 +94,15 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",},
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
 ]
 
 
@@ -157,7 +167,11 @@ LOGGING = {
         },
     },
     "loggers": {
-        "django": {"handlers": ["django"], "level": "DEBUG", "propagate": True,},
+        "django": {
+            "handlers": ["django"],
+            "level": "DEBUG",
+            "propagate": True,
+        },
         "puzzles.puzzle": {
             "handlers": ["puzzle"],
             "level": "DEBUG",

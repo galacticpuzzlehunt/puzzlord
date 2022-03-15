@@ -1,11 +1,10 @@
 from django import template
-from django.contrib.auth.models import User
 from django.db.models import Exists
 from django.db.models import OuterRef
 from django.db.models import Subquery
 
 from puzzle_editing.models import TestsolveParticipation
-from puzzle_editing.models import UserProfile
+from puzzle_editing.models import User
 
 register = template.Library()
 
@@ -54,13 +53,13 @@ def testsolve_session_list(
 
     for session_id, username, display_name in TestsolveParticipation.objects.filter(
         session__in=[session.id for session in sessions]
-    ).values_list("session", "user__username", "user__profile__display_name"):
+    ).values_list("session", "user__username", "user__display_name"):
         sessions[id_to_index[session_id]].opt_participants.append(
             (username, display_name)
         )
 
     for session in sessions:
-        session.participants_html = UserProfile.html_user_list_of_flat(
+        session.participants_html = User.html_user_list_of_flat(
             session.opt_participants, linkify=False
         )
 

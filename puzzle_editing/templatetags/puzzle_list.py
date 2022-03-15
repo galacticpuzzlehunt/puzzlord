@@ -1,7 +1,6 @@
 import random
 
 from django import template
-from django.contrib.auth.models import User
 from django.db.models import Exists
 from django.db.models import Max
 from django.db.models import OuterRef
@@ -11,7 +10,7 @@ from django.db.models import Subquery
 import puzzle_editing.status as status
 from puzzle_editing.models import PuzzleTag
 from puzzle_editing.models import PuzzleVisited
-from puzzle_editing.models import UserProfile
+from puzzle_editing.models import User
 
 register = template.Library()
 
@@ -43,8 +42,6 @@ def make_puzzle_data(puzzles, user, do_query_filter_in):
         )
         # This prefetch is super slow.
         # .prefetch_related(
-        #     "authors__profile",
-        #     "editors__profile",
         #     Prefetch(
         #         "tags",
         #         queryset=PuzzleTag.objects.filter(important=True).only("name"),
@@ -83,7 +80,7 @@ def make_puzzle_data(puzzles, user, do_query_filter_in):
     if do_query_filter_in:
         authorships = authorships.filter(authored_puzzles__in=puzzle_ids)
     for username, display_name, puzzle_id in authorships.values_list(
-        "username", "profile__display_name", "authored_puzzles"
+        "username", "display_name", "authored_puzzles"
     ):
         if puzzle_id in id_to_index:
             puzzles[id_to_index[puzzle_id]].opt_authors.append((username, display_name))
@@ -92,16 +89,16 @@ def make_puzzle_data(puzzles, user, do_query_filter_in):
     if do_query_filter_in:
         editorships = editorships.filter(editing_puzzles__in=puzzle_ids)
     for username, display_name, puzzle_id in editorships.values_list(
-        "username", "profile__display_name", "editing_puzzles"
+        "username", "display_name", "editing_puzzles"
     ):
         if puzzle_id in id_to_index:
             puzzles[id_to_index[puzzle_id]].opt_editors.append((username, display_name))
 
     for puzzle in puzzles:
-        puzzle.authors_html = UserProfile.html_user_list_of_flat(
+        puzzle.authors_html = User.html_user_list_of_flat(
             puzzle.opt_authors, linkify=False
         )
-        puzzle.editors_html = UserProfile.html_user_list_of_flat(
+        puzzle.editors_html = User.html_user_list_of_flat(
             puzzle.opt_editors, linkify=False
         )
 
@@ -136,5 +133,5 @@ def puzzle_list(context, puzzles, user, with_new_link=False):
             if status.get_status_rank(st["value"])
             > status.get_status_rank(status.NEEDS_SOLUTION)
         ],
-        "random_id": "%016x" % random.randrange(16 ** 16),
+        "random_id": "%016x" % random.randrange(16**16),
     }

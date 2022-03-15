@@ -1,6 +1,6 @@
 from django import template
 
-from puzzle_editing.models import UserProfile
+from puzzle_editing.models import User
 
 register = template.Library()
 
@@ -9,4 +9,4 @@ register = template.Library()
 def user_display(user, linkify=False):
     """Display a user"""
 
-    return UserProfile.html_user_display_of(user, linkify)
+    return User.html_user_display_of(user, linkify)

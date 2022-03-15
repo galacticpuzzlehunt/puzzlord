@@ -59,19 +59,17 @@ Users
 	{% for user in users %}
 	<div id="user-{{ user.username }}">
 		<a href="{% url 'user' user.username %}">
-			<h2>{{ user.profile.display_name|default:user.username }}</h2>
+			<h2>{{ user.display_name|default:user.username }}</h2>
 		</a>
 		<ul>
 			<li>Username: {{ user.username }}</li>
-			{% if user.profile %}
-			{% if user.profile.discord_username %}
-			<li>Discord: <code>{{ user.profile.discord_username }}</code></li>
+			{% if user.discord_username %}
+			<li>Discord: <code>{{ user.discord_username }}</code></li>
 			{% endif %}
-			{% if user.profile.bio %}
+			{% if user.bio %}
 			<li>Bio:
-				{{ user.profile.bio|markdown }}
+				{{ user.bio|markdown }}
 			</li>
-			{% endif %}
 			{% endif %}
 		</ul>
 	</div>

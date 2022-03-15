@@ -7,7 +7,6 @@ import django.forms as forms
 import django.urls as urls
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import permission_required
-from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db.models import Avg
 from django.db.models import Count
@@ -52,37 +51,36 @@ from puzzle_editing.models import StatusSubscription
 from puzzle_editing.models import TestsolveGuess
 from puzzle_editing.models import TestsolveParticipation
 from puzzle_editing.models import TestsolveSession
-from puzzle_editing.models import UserProfile
+from puzzle_editing.models import User
 
 
 def get_sessions_with_joined_and_current(user):
     return TestsolveSession.objects.annotate(
         joined=Exists(
-            TestsolveParticipation.objects.filter(session=OuterRef("pk"), user=user,)
+            TestsolveParticipation.objects.filter(
+                session=OuterRef("pk"),
+                user=user,
+            )
         ),
         current=Exists(
             TestsolveParticipation.objects.filter(
-                session=OuterRef("pk"), user=user, ended=None,
+                session=OuterRef("pk"),
+                user=user,
+                ended=None,
             )
         ),
     )
 
 
 def get_full_display_name(user):
-    try:
-        if user.profile.display_name:
-            return "{} ({})".format(user.profile.display_name, user.username)
-        else:
-            return user.username
-    except UserProfile.DoesNotExist:
+    if user.display_name:
+        return "{} ({})".format(user.display_name, user.username)
+    else:
         return user.username
 
 
 def get_credits_name(user):
-    try:
-        return user.profile.credits_name or user.profile.display_name or user.username
-    except UserProfile.DoesNotExist:
-        return user.username
+    return user.credits_name or user.display_name or user.username
 
 
 def index(request):
@@ -94,10 +92,12 @@ def index(request):
         return render(request, "index_not_logged_in.html")
 
     blocked_on_author_puzzles = Puzzle.objects.filter(
-        authors=user, status__in=status.STATUSES_BLOCKED_ON_AUTHORS,
+        authors=user,
+        status__in=status.STATUSES_BLOCKED_ON_AUTHORS,
     )
     blocked_on_editor_puzzles = Puzzle.objects.filter(
-        editors=user, status__in=status.STATUSES_BLOCKED_ON_EDITORS,
+        editors=user,
+        status__in=status.STATUSES_BLOCKED_ON_EDITORS,
     )
     current_sessions = get_sessions_with_joined_and_current(user).filter(
         joined=True, current=True
@@ -194,7 +194,8 @@ class RegisterForm(forms.ModelForm):
         password2 = self.cleaned_data.get("password2")
         if password1 and password2 and password1 != password2:
             raise forms.ValidationError(
-                "The two password fields didn't match.", code="password_mismatch",
+                "The two password fields didn't match.",
+                code="password_mismatch",
             )
         return password2
 
@@ -202,24 +203,20 @@ class RegisterForm(forms.ModelForm):
         site_password = self.cleaned_data.get("site_password")
         if site_password and site_password != settings.SITE_PASSWORD:
             raise forms.ValidationError(
-                "The site password was incorrect.", code="password_mismatch",
+                "The site password was incorrect.",
+                code="password_mismatch",
             )
         return site_password
 
     def save(self, commit=True):
         user = super(RegisterForm, self).save(commit=False)
+        user.display_name = self.cleaned_data["display_name"]
+        user.discord_username = self.cleaned_data["discord_username"]
+        user.bio = self.cleaned_data["bio"]
+        user.credits_name = self.cleaned_data["credits_name"]
         user.set_password(self.cleaned_data["password1"])
         if commit:
             user.save()
-
-            profile = UserProfile(
-                user=user,
-                display_name=self.cleaned_data["display_name"],
-                discord_username=self.cleaned_data["discord_username"],
-                bio=self.cleaned_data["bio"],
-                credits_name=self.cleaned_data["credits_name"],
-            )
-            profile.save()
         return user
 
 
@@ -272,48 +269,26 @@ def account(request):
         form = AccountForm(request.POST)
         if form.is_valid():
             user.email = form.cleaned_data["email"]
-            user.save()
-
-            try:
-                profile = user.profile
-                profile.display_name = form.cleaned_data["display_name"]
-                profile.discord_username = form.cleaned_data["discord_username"]
-                profile.bio = form.cleaned_data["bio"]
-                profile.credits_name = form.cleaned_data["credits_name"]
-                profile.enable_keyboard_shortcuts = form.cleaned_data[
-                    "keyboard_shortcuts"
-                ]
-                profile.save()
-            except UserProfile.DoesNotExist:
-                profile = UserProfile(
-                    user=user,
-                    display_name=form.cleaned_data["display_name"],
-                    discord_username=form.cleaned_data["discord_username"],
-                    bio=form.cleaned_data["bio"],
-                    enable_keyboard_shortcuts=form.cleaned_data["keyboard_shortcuts"],
-                )
-                profile.save()
+            user.display_name = form.cleaned_data["display_name"]
+            user.discord_username = form.cleaned_data["discord_username"]
+            user.bio = form.cleaned_data["bio"]
+            user.credits_name = form.cleaned_data["credits_name"]
+            user.enable_keyboard_shortcuts = form.cleaned_data["keyboard_shortcuts"]
 
             return render(request, "account.html", {"form": form, "success": True})
         else:
             return render(request, "account.html", {"form": form})
     else:
-        try:
-            profile = user.profile
-            form = AccountForm(
-                initial={
-                    "email": user.email,
-                    "display_name": profile.display_name,
-                    "discord_username": profile.discord_username,
-                    "credits_name": profile.credits_name
-                    or profile.display_name
-                    or user.username,
-                    "bio": profile.bio,
-                    "keyboard_shortcuts": profile.enable_keyboard_shortcuts,
-                }
-            )
-        except UserProfile.DoesNotExist:
-            form = AccountForm(initial={"email": user.email})
+        form = AccountForm(
+            initial={
+                "email": user.email,
+                "display_name": user.display_name,
+                "discord_username": user.discord_username,
+                "credits_name": user.credits_name or user.display_name or user.username,
+                "bio": user.bio,
+                "keyboard_shortcuts": user.enable_keyboard_shortcuts,
+            }
+        )
 
         return render(request, "account.html", {"form": form})
 
@@ -397,7 +372,10 @@ def authored(request):
     return render(
         request,
         "authored.html",
-        {"puzzles": puzzles, "editing_puzzles": editing_puzzles,},
+        {
+            "puzzles": puzzles,
+            "editing_puzzles": editing_puzzles,
+        },
     )
 
 
@@ -508,7 +486,7 @@ def add_comment(
 
 
 @login_required  # noqa: C901
-def puzzle(request, id):
+def puzzle(request, id):  # noqa: C901
     puzzle = get_object_or_404(Puzzle, id=id)
     user = request.user
 
@@ -662,12 +640,6 @@ def puzzle(request, id):
             | Q(last_comment_date__gt=F("last_visited_date"))
         )
 
-        # FIXME
-        try:
-            enable_keyboard_shortcuts = user.profile.enable_keyboard_shortcuts
-        except UserProfile.DoesNotExist:
-            enable_keyboard_shortcuts = False
-
         # TODO: participants is still hitting the database once per session;
         # might be possible to craft a Prefetch to get the list of
         # participants; or maybe we can abstract out the handrolled user list
@@ -706,7 +678,7 @@ def puzzle(request, id):
                 "solution_form": PuzzleSolutionForm(instance=puzzle),
                 "priority_form": PuzzlePriorityForm(instance=puzzle),
                 "hint_form": PuzzleHintForm(initial={"puzzle": puzzle}),
-                "enable_keyboard_shortcuts": enable_keyboard_shortcuts,
+                "enable_keyboard_shortcuts": user.enable_keyboard_shortcuts,
                 "next_unread_puzzle_id": unread_puzzles[0].id
                 if unread_puzzles.count()
                 else None,
@@ -930,7 +902,11 @@ def puzzle_postprod(request, id):
     return render(
         request,
         "puzzle_postprod.html",
-        {"puzzle": puzzle, "form": form, "spoiled": spoiled,},
+        {
+            "puzzle": puzzle,
+            "form": form,
+            "spoiled": spoiled,
+        },
     )
 
 
@@ -1117,11 +1093,21 @@ def edit_comment(request, id):
 
     if request.user != comment.author:
         return render(
-            request, "edit_comment.html", {"comment": comment, "not_author": True,}
+            request,
+            "edit_comment.html",
+            {
+                "comment": comment,
+                "not_author": True,
+            },
         )
     elif comment.is_system:
         return render(
-            request, "edit_comment.html", {"comment": comment, "is_system": True,}
+            request,
+            "edit_comment.html",
+            {
+                "comment": comment,
+                "is_system": True,
+            },
         )
 
     if request.method == "POST":
@@ -1139,7 +1125,10 @@ def edit_comment(request, id):
     return render(
         request,
         "edit_comment.html",
-        {"comment": comment, "form": PuzzleCommentForm({"content": comment.content}),},
+        {
+            "comment": comment,
+            "form": PuzzleCommentForm({"content": comment.content}),
+        },
     )
 
 
@@ -1162,7 +1151,10 @@ def edit_hint(request, id):
     return render(
         request,
         "edit_hint.html",
-        {"hint": hint, "form": PuzzleHintForm(instance=hint),},
+        {
+            "hint": hint,
+            "form": PuzzleHintForm(instance=hint),
+        },
     )
 
 
@@ -1295,7 +1287,11 @@ def testsolve_finder(request):
     return render(
         request,
         "testsolve_finder.html",
-        {"puzzles": puzzles, "users": users, "missing_usernames": missing_usernames,},
+        {
+            "puzzles": puzzles,
+            "users": users,
+            "missing_usernames": missing_usernames,
+        },
     )
 
 
@@ -1347,7 +1343,9 @@ def testsolve_one(request, id):
 
         elif "do_guess" in request.POST:
             participation = get_object_or_404(
-                TestsolveParticipation, session=session, user=user,
+                TestsolveParticipation,
+                session=session,
+                user=user,
             )
             guess_form = GuessForm(request.POST)
             if guess_form.is_valid():
@@ -1359,7 +1357,10 @@ def testsolve_one(request, id):
                 )
 
                 guess_model = TestsolveGuess(
-                    session=session, user=user, guess=guess, correct=correct,
+                    session=session,
+                    user=user,
+                    guess=guess,
+                    correct=correct,
                 )
                 guess_model.save()
 
@@ -1379,7 +1380,8 @@ def testsolve_one(request, id):
                     session.save()
                 else:
                     message = "{} answer guess: {}".format(
-                        "Correct" if correct else "Incorrect", guess,
+                        "Correct" if correct else "Incorrect",
+                        guess,
                     )
                     add_comment(
                         request=request,
@@ -1621,7 +1623,8 @@ def testsolve_finish(request, id):
 @login_required
 def postprod(request):
     postprodding = Puzzle.objects.filter(
-        status=status.NEEDS_POSTPROD, postprodders=request.user,
+        status=status.NEEDS_POSTPROD,
+        postprodders=request.user,
     )
     needs_postprod = Puzzle.objects.annotate(
         has_postprodder=Exists(User.objects.filter(postprodding_puzzles=OuterRef("pk")))
@@ -1664,9 +1667,7 @@ def awaiting_editor(request):
     return render(
         request,
         "awaiting_editor.html",
-        {
-            "puzzles": Puzzle.objects.filter(status=status.AWAITING_EDITOR)
-        },
+        {"puzzles": Puzzle.objects.filter(status=status.AWAITING_EDITOR)},
     )
 
 
@@ -1750,7 +1751,12 @@ def rounds(request):
     ]
 
     return render(
-        request, "rounds.html", {"rounds": rounds, "new_round_form": RoundForm(),}
+        request,
+        "rounds.html",
+        {
+            "rounds": rounds,
+            "new_round_form": RoundForm(),
+        },
     )
 
 
@@ -1812,7 +1818,13 @@ def bulk_add_answers(request, id):
 
         return redirect(urls.reverse("bulk_add_answers", args=[id]))
 
-    return render(request, "bulk_add_answers.html", {"round": round,})
+    return render(
+        request,
+        "bulk_add_answers.html",
+        {
+            "round": round,
+        },
+    )
 
 
 @login_required
@@ -1936,7 +1948,14 @@ def single_tag(request, id):
         label = "1 puzzle"
     else:
         label = "{} puzzles".format(count)
-    return render(request, "single_tag.html", {"tag": tag, "count_label": label,})
+    return render(
+        request,
+        "single_tag.html",
+        {
+            "tag": tag,
+            "count_label": label,
+        },
+    )
 
 
 @login_required
@@ -1951,7 +1970,12 @@ def edit_tag(request, id):
         else:
             return render(request, "edit_tag.html", {"form": form, "tag": tag})
     return render(
-        request, "edit_tag.html", {"form": PuzzleTagForm(instance=tag), "tag": tag,}
+        request,
+        "edit_tag.html",
+        {
+            "form": PuzzleTagForm(instance=tag),
+            "tag": tag,
+        },
     )
 
 
@@ -1974,7 +1998,7 @@ def annotate_users_helper(user_list, annotation_kwargs):
 
 @login_required
 def users(request):
-    users = list(User.objects.all().select_related("profile"))
+    users = list(User.objects.all())
 
     for key in ["authored", "editing", "factchecking"]:
         annotation_kwargs = dict()
@@ -2026,42 +2050,47 @@ def users(request):
         # FIXME You can do this quickly in Django 3.x
         user.is_meta_editor = user.has_perm("puzzle_editing.change_round")
 
-    return render(request, "users.html", {"users": users,})
+    return render(
+        request,
+        "users.html",
+        {
+            "users": users,
+        },
+    )
 
 
 @login_required
 def editors(request):
-    users = (
-        User.objects.all()
-        .annotate(
-            editing_all=Count("editing_puzzles", distinct=True,),
-            editing_pre_testsolving=Count(
-                "editing_puzzles",
-                filter=Q(editing_puzzles__status__in=status.PRE_TESTSOLVING_STATUSES),
-                distinct=True,
-            ),
-            editing_post_testsolving=Count(
-                "editing_puzzles",
-                filter=Q(editing_puzzles__status__in=status.POST_TESTSOLVING_STATUSES),
-                distinct=True,
-            ),
-            editing_done=Count(
-                "editing_puzzles",
-                filter=Q(editing_puzzles__status=status.DONE),
-                distinct=True,
-            ),
-            editing_deferred=Count(
-                "editing_puzzles",
-                filter=Q(editing_puzzles__status=status.DEFERRED),
-                distinct=True,
-            ),
-            editing_dead=Count(
-                "editing_puzzles",
-                filter=Q(editing_puzzles__status=status.DEAD),
-                distinct=True,
-            ),
-        )
-        .select_related("profile")
+    users = User.objects.all().annotate(
+        editing_all=Count(
+            "editing_puzzles",
+            distinct=True,
+        ),
+        editing_pre_testsolving=Count(
+            "editing_puzzles",
+            filter=Q(editing_puzzles__status__in=status.PRE_TESTSOLVING_STATUSES),
+            distinct=True,
+        ),
+        editing_post_testsolving=Count(
+            "editing_puzzles",
+            filter=Q(editing_puzzles__status__in=status.POST_TESTSOLVING_STATUSES),
+            distinct=True,
+        ),
+        editing_done=Count(
+            "editing_puzzles",
+            filter=Q(editing_puzzles__status=status.DONE),
+            distinct=True,
+        ),
+        editing_deferred=Count(
+            "editing_puzzles",
+            filter=Q(editing_puzzles__status=status.DEFERRED),
+            distinct=True,
+        ),
+        editing_dead=Count(
+            "editing_puzzles",
+            filter=Q(editing_puzzles__status=status.DEAD),
+            distinct=True,
+        ),
     )
 
     users = list(users)
@@ -2072,7 +2101,13 @@ def editors(request):
 
     users = [user for user in users if user.is_meta_editor or user.editing_all > 0]
 
-    return render(request, "editors.html", {"users": users,})
+    return render(
+        request,
+        "editors.html",
+        {
+            "users": users,
+        },
+    )
 
 
 @login_required
@@ -2085,7 +2120,7 @@ def users_statuses(request):
         for stat in status.STATUSES
     }
 
-    users = User.objects.all().select_related("profile").annotate(**annotation_kwargs)
+    users = User.objects.all().annotate(**annotation_kwargs)
 
     users = list(users)
     for user in users:
@@ -2124,5 +2159,15 @@ def preview_markdown(request):
         output = render_to_string(
             "preview_markdown.html", {"input": request.body.decode("utf-8")}
         )
-        return JsonResponse({"success": True, "output": output,})
-    return JsonResponse({"success": False, "error": "No markdown input received",})
+        return JsonResponse(
+            {
+                "success": True,
+                "output": output,
+            }
+        )
+    return JsonResponse(
+        {
+            "success": False,
+            "error": "No markdown input received",
+        }
+    )

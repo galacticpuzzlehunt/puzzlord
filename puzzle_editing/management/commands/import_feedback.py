@@ -1,12 +1,12 @@
-import time
 import json
+import time
 
 from django.core.management.base import BaseCommand
 
 from puzzle_editing import status
 from puzzle_editing.models import Puzzle
 from puzzle_editing.models import PuzzleComment
-from django.contrib.auth.models import User
+from puzzle_editing.models import User
 
 
 class Command(BaseCommand):

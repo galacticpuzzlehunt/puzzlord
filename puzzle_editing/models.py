@@ -2,7 +2,7 @@ from enum import Enum
 
 import django.urls as urls
 from django import forms
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator
 from django.core.validators import RegexValidator
 from django.db import models
@@ -19,10 +19,7 @@ from django.utils.html import mark_safe
 import puzzle_editing.status as status
 
 
-# If we were starting puzzlord over, maybe follow these instructions:
-# https://docs.djangoproject.com/en/2.2/topics/auth/customizing/#using-a-custom-user-model-when-starting-a-project
-class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.PROTECT, related_name="profile")
+class User(AbstractUser):
     display_name = models.CharField(max_length=500, blank=True)
     discord_username = models.CharField(
         max_length=500,
@@ -40,10 +37,10 @@ class UserProfile(models.Model):
     enable_keyboard_shortcuts = models.BooleanField(default=False)
 
     @staticmethod
-    def profile_display_name_of(user):
+    def display_name_of(user):
         try:
-            return user.profile.display_name
-        except UserProfile.DoesNotExist:
+            return user.display_name
+        except User.DoesNotExist:
             return None
 
     # Some of this templating is done in an inner loop, so doing it with
@@ -68,8 +65,8 @@ class UserProfile(models.Model):
 
     @staticmethod
     def html_user_display_of(user, linkify):
-        return UserProfile.html_user_display_of_flat(
-            user.username, UserProfile.profile_display_name_of(user), linkify
+        return User.html_user_display_of_flat(
+            user.username, User.display_name_of(user), linkify
         )
 
     @staticmethod
@@ -78,25 +75,16 @@ class UserProfile(models.Model):
         s = format_html_join(
             ", ",
             "{}",
-            (
-                (UserProfile.html_user_display_of_flat(un, dn, linkify),)
-                for un, dn in ud_pairs
-            ),
+            ((User.html_user_display_of_flat(un, dn, linkify),) for un, dn in ud_pairs),
         )
         return s or mark_safe('<span class="empty">(none)</span>')
 
     @staticmethod
     def html_user_list_of(users, linkify):
-        return UserProfile.html_user_list_of_flat(
-            (
-                (user.username, UserProfile.profile_display_name_of(user))
-                for user in users
-            ),
+        return User.html_user_list_of_flat(
+            ((user.username, User.display_name_of(user)) for user in users),
             linkify,
         )
-
-    def __str__(self):
-        return "Profile of {}".format(self.user)
 
 
 class Round(models.Model):
@@ -352,7 +340,8 @@ class StatusSubscription(models.Model):
     """An indication to email a user when any puzzle enters this status."""
 
     status = models.CharField(
-        max_length=status.MAX_LENGTH, choices=status.DESCRIPTIONS.items(),
+        max_length=status.MAX_LENGTH,
+        choices=status.DESCRIPTIONS.items(),
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 

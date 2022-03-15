@@ -3,7 +3,6 @@ from datetime import datetime
 
 import django.urls as urls
 from django.contrib.auth.models import Permission
-from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.test import Client
 from django.test import TestCase
@@ -14,6 +13,7 @@ from .models import Puzzle
 from .models import Round
 from .models import TestsolveParticipation
 from .models import TestsolveSession
+from .models import User
 
 logging.disable(logging.DEBUG)  # there's a particular template lookup failure
 # in a view that really doesn't seem relevant

@@ -17,7 +17,7 @@ def comment_list(
     show_testsolve_session_links,
     allow_status_changes,
 ):
-    comments = comments.order_by("date").select_related("author__profile")
+    comments = comments.order_by("date").select_related("author")
 
     authors = set(puzzle.authors.values_list("id", flat=True))
 

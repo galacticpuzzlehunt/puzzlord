@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
 
 from .models import CommentReaction
 from .models import Hint
@@ -14,9 +15,9 @@ from .models import StatusSubscription
 from .models import TestsolveGuess
 from .models import TestsolveParticipation
 from .models import TestsolveSession
-from .models import UserProfile
+from .models import User
 
-admin.site.register(UserProfile)
+admin.site.register(User, UserAdmin)
 admin.site.register(Round)
 admin.site.register(PuzzleAnswer)
 admin.site.register(Puzzle)

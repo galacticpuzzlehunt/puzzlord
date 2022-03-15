@@ -3,22 +3,22 @@
 {% load puzzle_list %}
 {% load testsolve_session_list %}
 {% block main %}
-	<h1>{{them.profile.display_name | default:them}} (<code>{{them.profile.discord_username}}</code> on discord)</h1>
-    {% if them.profile.bio %}
+	<h1>{{them.display_name | default:them}} (<code>{{them.discord_username}}</code> on discord)</h1>
+    {% if them.bio %}
         <h2>Bio</h2>
-        <em>{{them.profile.bio}}</em>
+        <em>{{them.bio}}</em>
     {% endif %}
 
-	<h2>Puzzles {{them.profile.display_name | default:them}} is authoring</h2>
+	<h2>Puzzles {{them.display_name | default:them}} is authoring</h2>
 	{% puzzle_list them.authored_puzzles request.user %}
 	{% if them.editing_puzzles %}
-		<h2>Puzzles {{them.profile.display_name | default:them}} is editing</h2>
+		<h2>Puzzles {{them.display_name | default:them}} is editing</h2>
 		{% puzzle_list them.editing_puzzles request.user %}
 	{% endif %}
-	<h2>Puzzles {{them.profile.display_name | default:them}} is factchecking</h2>
+	<h2>Puzzles {{them.display_name | default:them}} is factchecking</h2>
 	{% puzzle_list them.factchecking_puzzles request.user %}
-	<h2>Puzzles {{them.profile.display_name | default:them}} is postprodding</h2>
+	<h2>Puzzles {{them.display_name | default:them}} is postprodding</h2>
 	{% puzzle_list them.postprodding_puzzles request.user %}
-	<h2>Testsolving sessions {{them.profile.display_name|default:them}} has been in</h2>
+	<h2>Testsolving sessions {{them.display_name|default:them}} has been in</h2>
 	{% testsolve_session_list testsolving_sessions request.user %}
 {% endblock %}

@@ -29,7 +29,7 @@ Some features are still missing.
 
 ## First Time Setup with Virtualenv
 
-- Make sure you have `pip3` (maybe `pip`) and python 3.x.
+- Make sure you have `pip3` (maybe `pip`) and python 3.8+.
 - Get virtualenv: `pip3 install virtualenv`
 - `cd` into the root of this repo
 - Create a virtualenv: `virtualenv venv --python python3`.
@@ -55,7 +55,7 @@ Some features are still missing.
 
 If all went well, the dev server should start, the local IP and port should be
 printed to stdout, and it should helpfully tell you you're running Django
-2.2.4.
+4.0.3.
 
 Later, when you're done working on the project and want to leave the virtualenv,
 run `deactivate`.
@@ -77,7 +77,7 @@ activated the virtualenv first. Then add the dependency to `requirements.txt`.
 ## Where are things?
 
 The root of this repository is the Django project
-Site-wide configuration lives inside the `gph` directory.
+Site-wide configuration lives inside the `puzzlord` directory.
 
 The Django project (currently) has only one app, called "puzzle_editing". Most
 business logic and UI lives inside the `puzzle_editing` directory.

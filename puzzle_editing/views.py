@@ -274,6 +274,7 @@ def account(request):
             user.bio = form.cleaned_data["bio"]
             user.credits_name = form.cleaned_data["credits_name"]
             user.enable_keyboard_shortcuts = form.cleaned_data["keyboard_shortcuts"]
+            user.save()
 
             return render(request, "account.html", {"form": form, "success": True})
         else:

@@ -9,6 +9,9 @@
 		<th>Summary</th>
 		<th>Puzzle Priority</th>
 		<th>Participants</th>
+		<th>Done</th>
+		<th>Created</th>
+		<th>Last Comment</th>
 		{% if show_notes %}
 			<th>Notes</th>
 		{% endif %}
@@ -28,6 +31,11 @@
 			<td class="small-md">{{ puzzle.summary|markdown }}</td>
 			<td sorttable_customkey="{{ puzzle.priority }}">{{ puzzle.get_priority_display }}</td>
 			<td>{{ session.participants_html }}</td>
+			<td>{{ session.get_done_participants_display }}</td>
+			<td sorttable_customkey="{{ session.started.timestamp }}" class="timestamp"
+				data-timestamp="{{ session.started.timestamp }}">{{ session.started }}</td>
+			<td sorttable_customkey="{{ session.last_comment_date.timestamp }}" class="timestamp"
+				data-timestamp="{{ session.last_comment_date.timestamp }}">{{ session.last_comment_date }}</td>
 			{% if show_notes %}
 				<td class="small-md">{{ session.notes|markdown }}</td>
 			{% endif %}

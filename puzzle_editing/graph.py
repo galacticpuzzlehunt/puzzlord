@@ -39,7 +39,7 @@ exclude = [status.DEAD, status.DEFERRED, status.INITIAL_IDEA]
 
 
 def curr_puzzle_graph_b64(time: str, target_count):
-    comments = PuzzleComment.objects.filter(is_system=True).order_by("date")
+    comments = PuzzleComment.objects.order_by("date")
     counts = Counter()
     curr_status = {}
     x = []
@@ -59,7 +59,7 @@ def curr_puzzle_graph_b64(time: str, target_count):
             y.append([counts[s] for s in status.STATUSES[-1::-1] if s not in exclude])
 
     # Plot
-    fig = plt.figure(figsize=(11, 5))
+    fig = plt.figure(figsize=(11, 8))  # width, height (inches...)
     ax = plt.subplot(1, 1, 1)
     ax.xaxis_date("US/Eastern")
     if time in timetypes:
@@ -72,7 +72,7 @@ def curr_puzzle_graph_b64(time: str, target_count):
     if target_count is not None:
         ax.plot(x, [target_count for i in x], color=(0, 0, 0))
     handles, plabels = ax.get_legend_handles_labels()
-    ax.legend(handles[::-1], plabels[::-1], loc="upper left")
+    ax.legend(handles[::-1], plabels[::-1], loc="upper left", fontsize="small")
     buf = BytesIO()
     fig.savefig(buf, format="png")
     image_base64 = base64.b64encode(buf.getvalue()).decode("utf-8").replace("\n", "")

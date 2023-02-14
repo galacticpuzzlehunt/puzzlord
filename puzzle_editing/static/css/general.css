@@ -407,6 +407,9 @@ blockquote > p:last-child {
 	border: 1px dashed var(--border-color);
 	border-radius: 3px;
 }
+.ghost-button.gray {
+	filter: grayscale(1);
+}
 .ghost-selected {
 	border: 3px double var(--border-color);
 	font-weight: bold;

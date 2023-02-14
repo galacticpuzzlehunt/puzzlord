@@ -1,5 +1,6 @@
 from django import template
 from django.db.models import Exists
+from django.db.models import Max
 from django.db.models import OuterRef
 from django.db.models import Subquery
 
@@ -26,6 +27,7 @@ def testsolve_session_list(
                     spoiled_puzzles__testsolve_sessions=OuterRef("pk"), id=user.id
                 )
             ),
+            last_comment_date=Max("comments__date"),
         )
         .order_by("puzzle__priority")
         .select_related("puzzle")

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load puzzle_list %}
+{% load testsolve_session_list %}
+{% load user_list %}
+{% load humanize %}
+{% load markdown %}
+{% block title %}
+Testsolving
+{% endblock %}
+{% block main %}
+<h1>
+	All testsolving sessions
+</h1>
+
+{% testsolve_session_list sessions request.user show_ratings=True %}
+{% endblock %}

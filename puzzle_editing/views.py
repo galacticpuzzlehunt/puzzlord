@@ -1621,6 +1621,15 @@ def testsolve_finish(request, id):
 
 
 @login_required
+def testsolve_all(request):
+    return render(
+        request,
+        "testsolve_all.html",
+        {"sessions": get_sessions_with_joined_and_current(request.user)},
+    )
+
+
+@login_required
 def postprod(request):
     postprodding = Puzzle.objects.filter(
         status=status.NEEDS_POSTPROD,

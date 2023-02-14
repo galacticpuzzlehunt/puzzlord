@@ -7,7 +7,7 @@
 {% endblock %}
 {% block main %}
 <h1>
-	Testsolving ({% if spoiled %}<a href="{% url 'puzzle' session.puzzle.id %}">{{ session.puzzle }}</a>{% else %}{{ session.puzzle }}{% endif %}, Session #{{ session.id }})</p>
+	Testsolving ({% if spoiled %}<a href="{% url 'puzzle' session.puzzle.id %}">{{ session.puzzle.spoilery_title }}</a>{% else %}{{ session.puzzle }}{% endif %}, Session #{{ session.id }})</p>
 </h1>
 
 <p>Participants:</p>

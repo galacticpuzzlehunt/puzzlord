@@ -37,7 +37,7 @@
 				<button type="submit" title="{{ reactors|join:", " }}" class="ghost-button {% if username in reactors %}ghost-selected{% endif %}" name="emoji" value="{{ emoji }}">{{ emoji }}: {{ reactors|length }}</button>
 				{% endfor %}
 				{% endif %}
-				<button type="button" class="ghost-button toggle-show" data-target="reactions-{{ comment.id }}" data-rehide="−😀…">+😀…</button>
+				<button type="button" class="ghost-button gray toggle-show" data-target="reactions-{{ comment.id }}" data-rehide="−😀…">+😀…</button>
 				<span class="hidden" id="reactions-{{ comment.id }}">
 				<input type="hidden" name="react_comment" value="{{ comment.id }}">
 				{% for emoji in emoji_options %}

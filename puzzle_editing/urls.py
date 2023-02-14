@@ -36,6 +36,7 @@ urlpatterns = [
     path("hint/<int:id>", views.edit_hint, name="edit_hint"),
     path("testsolve", views.testsolve_main, name="testsolve_main"),
     path("testsolve_finder", views.testsolve_finder, name="testsolve_finder"),
+    path("testsolve_all", views.testsolve_all, name="testsolve_all"),
     path("testsolve/<int:id>", views.testsolve_one, name="testsolve_one"),
     path("testsolve/<int:id>/finish", views.testsolve_finish, name="testsolve_finish"),
     path("postprod", views.postprod, name="postprod"),

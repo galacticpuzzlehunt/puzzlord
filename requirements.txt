@@ -9,11 +9,11 @@ backports.zoneinfo==0.2.1  # via django
 bleach==4.1.0             # via -r requirements.in
 click==8.0.4              # via pip-tools
 cycler==0.11.0            # via matplotlib
-django==4.0.3             # via -r requirements.in
+django==4.0.9             # via -r requirements.in
 fonttools==4.30.0         # via matplotlib
 gevent==21.12.0           # via -r requirements.in
 gitdb==4.0.9              # via gitpython
-gitpython==3.1.27         # via -r requirements.in
+gitpython==3.1.30         # via -r requirements.in
 greenlet==1.1.2           # via gevent
 gunicorn==20.1.0          # via -r requirements.in
 importlib-metadata==4.11.3  # via markdown
@@ -23,7 +23,7 @@ matplotlib==3.5.1         # via -r requirements.in
 newrelic==7.6.0.173       # via -r requirements.in
 numpy==1.22.3             # via -r requirements.in, matplotlib
 packaging==21.3           # via bleach, matplotlib
-pillow==9.0.1             # via matplotlib
+pillow==9.2.0             # via matplotlib
 pip-tools==5.3.1          # via -r requirements.in
 pyparsing==3.0.7          # via matplotlib, packaging
 python-dateutil==2.8.2    # via matplotlib

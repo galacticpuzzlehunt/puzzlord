@@ -1313,6 +1313,9 @@ class TestsolveSessionNotesForm(forms.ModelForm):
 class GuessForm(forms.Form):
     guess = forms.CharField()
 
+class ShareFolderForm(forms.Form):
+    gmail_address = forms.CharField()
+
 
 @login_required
 def testsolve_one(request, id):
@@ -1431,6 +1434,13 @@ def testsolve_one(request, id):
                     is_system=True,
                     content=f"Created sheet: <a href={spreadsheet_link}>{spreadsheet_link}</a>",
                 )
+        elif sheets_enabled and "share_folder" in request.POST:
+            share_folder_form = ShareFolderForm(request.POST)
+            if share_folder_form.is_valid():
+                user_email = share_folder_form.cleaned_data["gmail_address"]
+                # if this fails (e.g. the email is invalid), just
+                # return a server error
+                testsolve_sheets.share_folder(user_email)
 
         # refresh
         return redirect(urls.reverse("testsolve_one", args=[id]))
@@ -1454,6 +1464,7 @@ def testsolve_one(request, id):
         "guess_form": GuessForm(),
         "comment_form": PuzzleCommentForm(),
         "sheets_enabled": sheets_enabled,
+        "share_folder_form": ShareFolderForm(),
     }
 
     return render(request, "testsolve_one.html", context)

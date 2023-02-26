@@ -34,9 +34,9 @@
 </form>
 {{ session.notes|markdown }}
 
+{% if sheets_enabled %}
 <form method="POST">
 	{% csrf_token %}
-	{% if sheets_enabled %}
 	<p>Sheet:
 		{% if session.spreadsheet_link %}
 		<a href="{{ session.spreadsheet_link }}">
@@ -46,8 +46,14 @@
 		<input type="submit" name="create_sheet" value="Create sheet"></input>
 		{% endif %}
 	</p>
-	{% endif %}
 </form>
+
+<form method="POST">
+	{% csrf_token %}
+	{{ share_folder_form }}
+	<input type="submit" name="share_folder" value="Share folder"></input>
+</form>
+{% endif %}
 
 {% if participation %}
 

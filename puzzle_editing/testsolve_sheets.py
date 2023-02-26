@@ -111,6 +111,18 @@ def send_delete_sheet_request(spreadsheet_id):
         fileId=spreadsheet_id
     ).execute()
 
+def share_folder(user_email):
+    permissions_service = get_drive_api_client().permissions()
+    permissions_service.create(
+        fileId=CONFIG["folder_id"],
+        sendNotificationEmail=False,
+        body={
+            "type": "user",
+            "role": "writer",
+            "emailAddress": user_email,
+        },
+    ).execute()
+
 # If there already exists a sheet, returns None.
 # Otherwise, returns the Google Sheets file ID of the newly
 # created sheet.

@@ -1419,7 +1419,17 @@ def testsolve_one(request, id):
             if emoji and comment:
                 CommentReaction.toggle(emoji, comment, user)
         elif sheets_enabled and "create_sheet" in request.POST:
-            testsolve_sheets.create_testsolve_sheet(session)
+            spreadsheet_id = testsolve_sheets.create_testsolve_sheet(session)
+            if spreadsheet_id:
+                spreadsheet_link = session.spreadsheet_link
+                add_comment(
+                    request=request,
+                    puzzle=puzzle,
+                    author=user,
+                    testsolve_session=session,
+                    is_system=True,
+                    content=f"Created sheet: <a href={spreadsheet_link}>{spreadsheet_link}</a>",
+                )
 
         # refresh
         return redirect(urls.reverse("testsolve_one", args=[id]))

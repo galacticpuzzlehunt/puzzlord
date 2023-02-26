@@ -201,11 +201,14 @@
 			<tr>
 				<th>Session</th>
 				<th>Participants</th>
-				<th>Correct Guess</th>
+				<th>Solved</th>
 				<th>Ended</th>
-				<th>Avg Diff</th>
-				<th>Avg Fun</th>
-				<th>Avg Hours</th>
+				<th>Diff</th>
+				<th>Fun</th>
+				<th>Hours</th>
+				{% if sheets_enabled %}
+				<th>Sheet</th>
+				{% endif %}
 				<th>Notes</th>
 			</tr>
 			{% for session in testsolve_sessions %}
@@ -213,11 +216,18 @@
 				<tr>
 					<td sorttable_customkey="{{ session.id }}"><a href="{% url 'testsolve_one' session.id %}">Session {{ session.id }}</a></td>
 					<td>{% user_list session.participants %}</td>
-                    <td>{% if session.has_correct_guess %}✅{% endif %}</td>
-                    <td>{{ session.get_done_participants_display }}</td>
-                    <td>{{ session.get_average_diff | floatformat }}</td>
-                    <td>{{ session.get_average_fun | floatformat }}</td>
-                    <td>{{ session.get_average_hours | floatformat }}</td>
+					<td>{% if session.has_correct_guess %}✅{% endif %}</td>
+					<td>{{ session.get_done_participants_display }}</td>
+					<td>{{ session.get_average_diff | floatformat }}</td>
+					<td>{{ session.get_average_fun | floatformat }}</td>
+					<td>{{ session.get_average_hours | floatformat }}</td>
+					{% if sheets_enabled %}
+					<td class="small-md">
+						{% if session.spreadsheet_link %}
+						<a href="{{ session.spreadsheet_link }}">Sheet</a>
+						{% endif %}
+					</td>
+					{% endif %}
 					<td class="small-md">{{ session.notes|markdown }}</td>
 				</tr>
 				{% endwith %}

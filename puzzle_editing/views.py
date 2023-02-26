@@ -685,6 +685,7 @@ def puzzle(request, id):  # noqa: C901
                 if unread_puzzles.count()
                 else None,
                 "disable_postprod": SiteSetting.get_setting("DISABLE_POSTPROD"),
+                "sheets_enabled": settings.TESTSOLVE_SHEETS_CONFIG["enabled"],
             },
         )
     else:

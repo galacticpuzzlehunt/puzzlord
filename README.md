@@ -43,9 +43,9 @@ Some features are still missing.
 	- Are you getting `fatal error: Python.h: No such file or directory`? Try installing `python-dev` libraries first (e.g. `sudo apt-get install python-dev`).
 - Create a folder for logs to go in: `mkdir logs`
 - **Fix all the configuration options, secret keys and credentials:**
-	- the SECRET_KEY and SITE_PASSWORD in `puzzlord/settings.py` (the SECRET_KEY should be a highly secure random string, which Django uses for hashes, CSRF tokens, and such; the SITE_PASSWORD is what you will give out to users to let them register accounts)
+	- the SECRET_KEY and SITE_PASSWORD in `settings/base.py` (the SECRET_KEY should be a highly secure random string, which Django uses for hashes, CSRF tokens, and such; the SITE_PASSWORD is what you will give out to users to let them register accounts)
 	- the sender and reply-to email in `puzzle_editing/messaging.py`
-	- the SECRET_KEY and email credentials in `settings/base.py`
+	- email credentials in `settings/base.py`
 	- the hosts in `settings/staging.py` and `settings/prod.py`
 - Make sure the database schema is up to date with `python manage.py migrate`
 - Make a superuser with `python manage.py createsuperuser`

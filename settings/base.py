@@ -198,3 +198,5 @@ HUNT_TIME = datetime.datetime(
     microsecond=0,
     tzinfo=datetime.timezone.utc,
 )
+
+SITE_PASSWORD = "FIXME_PASSWORD_GOES_HERE"

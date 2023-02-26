@@ -17,6 +17,7 @@ from django.db.models import OuterRef
 from django.db.models import Q
 from django.db.models import Subquery
 from django.db.models.functions import Lower
+from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
@@ -29,7 +30,6 @@ from django.views.static import serve
 import puzzle_editing.messaging as messaging
 import puzzle_editing.status as status
 import puzzle_editing.utils as utils
-import puzzlord.settings as settings
 from puzzle_editing.graph import curr_puzzle_graph_b64
 from puzzle_editing.models import CommentReaction
 from puzzle_editing.models import get_user_role

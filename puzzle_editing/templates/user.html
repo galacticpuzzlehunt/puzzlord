@@ -3,7 +3,7 @@
 {% load puzzle_list %}
 {% load testsolve_session_list %}
 {% block main %}
-	<h1>{{them.display_name | default:them}} (<code>{{them.discord_username}}</code> on discord)</h1>
+	<h1>{{them.display_name | default:them}} (<code>{{them.discord_username}}</code> on discord; credit as {{them.credits_name}})</h1>
     {% if them.bio %}
         <h2>Bio</h2>
         <em>{{them.bio}}</em>

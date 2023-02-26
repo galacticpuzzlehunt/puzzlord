@@ -63,6 +63,9 @@ Users
 		</a>
 		<ul>
 			<li>Username: {{ user.username }}</li>
+			{% if user.credits_name %}
+			<li>Credit as: {{ user.credits_name }}</li>
+			{% endif %}
 			{% if user.discord_username %}
 			<li>Discord: <code>{{ user.discord_username }}</code></li>
 			{% endif %}

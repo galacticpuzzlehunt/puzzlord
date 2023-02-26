@@ -9,3 +9,4 @@ bleach
 gitpython
 matplotlib
 numpy
+google-api-python-client

@@ -200,3 +200,12 @@ HUNT_TIME = datetime.datetime(
 )
 
 SITE_PASSWORD = "FIXME_PASSWORD_GOES_HERE"
+
+# Google Sheets integration for testsolving sheets
+TESTSOLVE_SHEETS_CONFIG = {
+    "enabled": False,
+    "credentials_path": "keys/google-service-account-credentials.json",
+    "folder_id": "FIXME_FOLDER_ID_GOES_HERE",
+    "spreadsheet_template_path": "puzzle_editing/spreadsheet-template.xlsx",
+    "spreadsheet_mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+}

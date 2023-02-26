@@ -27,6 +27,7 @@ from django.utils.html import mark_safe
 from django.views.decorators.csrf import csrf_exempt
 from django.views.static import serve
 
+import puzzle_editing.testsolve_sheets as testsolve_sheets
 import puzzle_editing.messaging as messaging
 import puzzle_editing.status as status
 import puzzle_editing.utils as utils
@@ -1317,6 +1318,7 @@ def testsolve_one(request, id):
     session = get_object_or_404(TestsolveSession, id=id)
     puzzle = session.puzzle
     user = request.user
+    sheets_enabled = settings.TESTSOLVE_SHEETS_CONFIG["enabled"]
 
     if request.method == "POST":
         if "join" in request.POST:
@@ -1416,6 +1418,8 @@ def testsolve_one(request, id):
             # not the end of the world.
             if emoji and comment:
                 CommentReaction.toggle(emoji, comment, user)
+        elif sheets_enabled and "create_sheet" in request.POST:
+            testsolve_sheets.create_testsolve_sheet(session)
 
         # refresh
         return redirect(urls.reverse("testsolve_one", args=[id]))
@@ -1438,6 +1442,7 @@ def testsolve_one(request, id):
         "notes_form": TestsolveSessionNotesForm(instance=session),
         "guess_form": GuessForm(),
         "comment_form": PuzzleCommentForm(),
+        "sheets_enabled": sheets_enabled,
     }
 
     return render(request, "testsolve_one.html", context)

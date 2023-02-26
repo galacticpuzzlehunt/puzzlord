@@ -34,6 +34,21 @@
 </form>
 {{ session.notes|markdown }}
 
+<form method="POST">
+	{% csrf_token %}
+	{% if sheets_enabled %}
+	<p>Sheet:
+		{% if session.spreadsheet_link %}
+		<a href="{{ session.spreadsheet_link }}">
+			{{ session.spreadsheet_link }}
+		</a>
+		{% else %}
+		<input type="submit" name="create_sheet" value="Create sheet"></input>
+		{% endif %}
+	</p>
+	{% endif %}
+</form>
+
 {% if participation %}
 
 {% if spoiled %}

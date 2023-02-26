@@ -38,3 +38,6 @@
 
 # uploaded puzzles
 puzzle_postprods/
+
+# secret keys
+/keys

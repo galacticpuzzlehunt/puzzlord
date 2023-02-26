@@ -63,6 +63,15 @@ run `deactivate`.
 If you ever need to install more pip packages for this project, make sure you've
 activated the virtualenv first. Then add the dependency to `requirements.txt`.
 
+### Testsolve Sheets Setup
+
+- Create a service account in a new or existing Google Cloud project. Skip the steps "Grant this service account access to the project" and "Grant users access to this service account".
+- Create a new key for the service account and save it as `keys/google-service-account-credentials.json`.
+- Create a Google Drive folder (using any Google account, such as a personal account) and share it with the service account's email with editor permissions.
+- Copy the ID of the folder into `TESTSOLVE_SHEETS_CONFIG["folder_id"]` in `settings/base.py`.
+	- You can get the ID of the folder by navigating to the folder in Google Drive and looking at the URL.
+- Set `TESTSOLVE_SHEETS_CONFIG["enabled"]` to `True`.
+
 ### Troubleshooting
  - Did you forget to source the virtualenv?
  - Did you forget to install all the requirements?

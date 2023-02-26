@@ -526,7 +526,7 @@ def puzzle(request, id):  # noqa: C901
                         author=user,
                         testsolve_session=session,
                         is_system=True,
-                        content="Puzzle status changed, automaticaly marking session as no longer joinable",
+                        content="Puzzle status changed, automatically marking session as no longer joinable",
                     )
                     session.save()
 

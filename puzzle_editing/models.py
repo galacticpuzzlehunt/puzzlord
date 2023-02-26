@@ -379,6 +379,11 @@ class TestsolveSession(models.Model):
         help_text="Whether this puzzle is advertised to other users as a session they can join.",
     )
     notes = models.TextField(blank=True)
+    spreadsheet_link = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Link to the testsolve spreadsheet.",
+    )
 
     def participants(self):
         return User.objects.filter(testsolve_participations__session=self).annotate(

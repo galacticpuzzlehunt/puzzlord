@@ -5,6 +5,7 @@ import re
 
 import django.forms as forms
 import django.urls as urls
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import permission_required
 from django.core.exceptions import ValidationError
@@ -17,7 +18,6 @@ from django.db.models import OuterRef
 from django.db.models import Q
 from django.db.models import Subquery
 from django.db.models.functions import Lower
-from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
@@ -27,9 +27,9 @@ from django.utils.html import mark_safe
 from django.views.decorators.csrf import csrf_exempt
 from django.views.static import serve
 
-import puzzle_editing.testsolve_sheets as testsolve_sheets
 import puzzle_editing.messaging as messaging
 import puzzle_editing.status as status
+import puzzle_editing.testsolve_sheets as testsolve_sheets
 import puzzle_editing.utils as utils
 from puzzle_editing.graph import curr_puzzle_graph_b64
 from puzzle_editing.models import CommentReaction
@@ -1312,6 +1312,7 @@ class TestsolveSessionNotesForm(forms.ModelForm):
 
 class GuessForm(forms.Form):
     guess = forms.CharField()
+
 
 class ShareFolderForm(forms.Form):
     gmail_address = forms.CharField()

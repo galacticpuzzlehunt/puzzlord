@@ -14,7 +14,6 @@ register = template.Library()
 def testsolve_session_list(
     sessions, user, show_notes=False, show_leave_button=False, show_ratings=False
 ):
-
     sessions = (
         sessions.annotate(
             is_author=Exists(

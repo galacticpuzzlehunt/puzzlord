@@ -2,7 +2,7 @@ from settings.base import *
 
 DEBUG = True
 
-EMAIL_SUBJECT_PREFIX = u"[\u2708\u2708\u2708DEVELOPMENT\u2708\u2708\u2708] "
+EMAIL_SUBJECT_PREFIX = "[\u2708\u2708\u2708DEVELOPMENT\u2708\u2708\u2708] "
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
@@ -67,7 +67,10 @@ LOGGING = {
             "handlers": ["django"],
             "propagate": False,
         },
-        "django.utils.autoreload": {"level": "INFO", "propagate": True,},
+        "django.utils.autoreload": {
+            "level": "INFO",
+            "propagate": True,
+        },
         "puzzles": {
             "handlers": ["puzzles-console"],
             "level": "DEBUG",

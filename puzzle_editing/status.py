@@ -102,7 +102,12 @@ BLOCKERS_AND_TRANSITIONS = {
             (DEAD, "⏹️  Mark as dead"),
         ],
     ),
-    AWAITING_EDITOR: (EDITORS, [(AWAITING_REVIEW, "✅ Mark as editors assigned"),]),
+    AWAITING_EDITOR: (
+        EDITORS,
+        [
+            (AWAITING_REVIEW, "✅ Mark as editors assigned"),
+        ],
+    ),
     AWAITING_REVIEW: (
         EDITORS,
         [
@@ -129,7 +134,12 @@ BLOCKERS_AND_TRANSITIONS = {
             (TESTSOLVING, "✅ Put into testsolving"),
         ],
     ),
-    AWAITING_ANSWER: (EDITORS, [(WRITING, "✅ Mark as answer assigned"),]),
+    AWAITING_ANSWER: (
+        EDITORS,
+        [
+            (WRITING, "✅ Mark as answer assigned"),
+        ],
+    ),
     WRITING: (
         AUTHORS,
         [
@@ -247,7 +257,12 @@ BLOCKERS_AND_TRANSITIONS = {
             (NEEDS_COPY_EDITS, "✅ Request copy edits (for small revisions)"),
         ],
     ),
-    NEEDS_COPY_EDITS: (FACTCHECKERS, [(NEEDS_HINTS, "✅ Request Hints"),]),
+    NEEDS_COPY_EDITS: (
+        FACTCHECKERS,
+        [
+            (NEEDS_HINTS, "✅ Request Hints"),
+        ],
+    ),
     NEEDS_HINTS: (
         AUTHORS,
         [
@@ -257,9 +272,17 @@ BLOCKERS_AND_TRANSITIONS = {
     ),
     AWAITING_HINTS_APPROVAL: (
         EDITORS,
-        [(NEEDS_HINTS, "❌ Request revisions to hints"), (DONE, "✅🎆 Mark as done! 🎆✅"),],
+        [
+            (NEEDS_HINTS, "❌ Request revisions to hints"),
+            (DONE, "✅🎆 Mark as done! 🎆✅"),
+        ],
     ),
-    DEFERRED: (NOBODY, [(IDEA_IN_DEVELOPMENT, "✅ Return to in development"),]),
+    DEFERRED: (
+        NOBODY,
+        [
+            (IDEA_IN_DEVELOPMENT, "✅ Return to in development"),
+        ],
+    ),
 }
 
 
@@ -326,6 +349,9 @@ def get_display(status):
 
 
 ALL_STATUSES = [
-    {"value": status, "display": description,}
+    {
+        "value": status,
+        "display": description,
+    }
     for status, description in DESCRIPTIONS.items()
 ]

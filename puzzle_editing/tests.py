@@ -4,12 +4,14 @@ from datetime import datetime
 import django.urls as urls
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.test import Client
 from django.test import TestCase
 
 from . import status
 from . import views
 from .models import Puzzle
+from .models import PuzzlePostprod
 from .models import Round
 from .models import TestsolveParticipation
 from .models import TestsolveSession
@@ -84,16 +86,16 @@ class Misc(TestCase):
 
         response = c.get(urls.reverse("index"))
         self.assertEqual(response.status_code, 200)
-        self.assertQuerysetEqual(
+        self.assertQuerySetEqual(
             response.context["inbox_puzzles"].order_by("id"),
-            [repr(self.puzzle2), repr(self.puzzle3)],
+            [self.puzzle2, self.puzzle3],
         )
 
         response = c.get(urls.reverse("puzzle", args=[self.puzzle2.id]))
         response = c.get(urls.reverse("index"))
         self.assertEqual(response.status_code, 200)
-        self.assertQuerysetEqual(
-            response.context["inbox_puzzles"].order_by("id"), [repr(self.puzzle3)]
+        self.assertQuerySetEqual(
+            response.context["inbox_puzzles"].order_by("id"), [self.puzzle3]
         )
 
     def test_authored(self):
@@ -102,10 +104,8 @@ class Misc(TestCase):
 
         response = c.get(urls.reverse("authored"))
         self.assertEqual(response.status_code, 200)
-        self.assertQuerysetEqual(response.context["puzzles"], [repr(self.puzzle2)])
-        self.assertQuerysetEqual(
-            response.context["editing_puzzles"], [repr(self.puzzle3)]
-        )
+        self.assertQuerySetEqual(response.context["puzzles"], [self.puzzle2])
+        self.assertQuerySetEqual(response.context["editing_puzzles"], [self.puzzle3])
 
     def test_all(self):
         c = Client()
@@ -236,3 +236,42 @@ class Misc(TestCase):
             302,
             "rounds doesn't work for non-meta-editor",
         )
+
+
+class Validation(TestCase):
+    def test_slug_validation(self):
+        puzzle = Puzzle.objects.create(name="slugtest", status_mtime=datetime.now())
+
+        def is_valid(slug):
+            pp = PuzzlePostprod(
+                puzzle=puzzle,
+                slug=slug,
+                zip_file="puzzle_postprods/x.zip",
+                authors="a",
+                complicated_deploy=False,
+            )
+            try:
+                pp.full_clean()
+                return True
+            except ValidationError:
+                return False
+
+        self.assertTrue(is_valid("fifty-fifty"))
+        self.assertTrue(is_valid("a.b"))
+        for slug in ["../../etc", "/etc", "foo/bar", "..", ".", "a b"]:
+            self.assertFalse(is_valid(slug), slug)
+
+    def test_change_status_validation(self):
+        create_user("s")
+        puzzle = Puzzle.objects.create(
+            name="statustest", status_mtime=datetime.now(), status=status.INITIAL_IDEA
+        )
+        c = Client()
+        c.login(username="s", password="ssecret")
+        url = urls.reverse("puzzle", args=[puzzle.id])
+        c.post(url, {"change_status": "bogus"})
+        puzzle.refresh_from_db()
+        self.assertEqual(puzzle.status, status.INITIAL_IDEA)
+        c.post(url, {"change_status": status.TESTSOLVING})
+        puzzle.refresh_from_db()
+        self.assertEqual(puzzle.status, status.TESTSOLVING)

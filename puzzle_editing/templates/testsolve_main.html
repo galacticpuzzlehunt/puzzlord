@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load puzzle_list %}
 {% load testsolve_session_list %}
+{% load testsolve_summary %}
 {% load user_list %}
 {% load humanize %}
 {% load markdown %}
@@ -29,6 +30,8 @@ Testsolving
 		for="hide-test-authored">Hide your puzzles</label>
 	<input id="hide-test-spoiled" type="checkbox" class="hide-test-spoiled"> <label for="hide-test-spoiled">Hide
 		spoiled</label>
+	<input id="hide-test-already" type="checkbox" class="hide-test-already"> <label for="hide-test-already">Hide
+		puzzles you have already tested</label>
 	<div class="table-wrap">
 		<table class="classic">
 			<tr>
@@ -37,13 +40,14 @@ Testsolving
 				<th>Summary</th>
 				<th>Authors</th>
 				<th>Editors</th>
+				<th>Previous Sessions</th>
 				<th>Priority</th>
 				<th>When Entered Testsolving</th>
 			</tr>
 			{% for puzzle_data in testsolvable %}
 			{% with puzzle_data.puzzle as puzzle %}
 			<tr
-				class="{% if puzzle.is_author %}test-authored{% endif %} {% if puzzle.is_spoiled %}test-spoiled{% endif %}">
+				class="{% if puzzle.is_author %}test-authored{% endif %} {% if puzzle.is_spoiled %}test-spoiled{% endif %} {% if puzzle.in_session or puzzle.was_in_session %}test-already{% endif %}">
 				<td>
 					<button type="submit" name="start_session" value="{{ puzzle.id }}" {% if puzzle_data.warning %}
 						data-warning="{{ puzzle_data.warning }}" {% endif %}>
@@ -58,6 +62,7 @@ Testsolving
 				<td class="small-md">{{ puzzle.summary|markdown }}</td>
 				<td>{% user_list puzzle.authors %}</td>
 				<td>{% user_list puzzle.editors %}</td>
+				{% testsolve_summary puzzle_data.sessions %}
 				<td>{{ puzzle.get_priority_display }}</td>
 				<td>{{ puzzle.status_mtime | naturaltime }}</td>
 			</tr>

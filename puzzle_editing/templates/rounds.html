@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load puzzle_list %}
 {% load markdown %}
 {% block title %}
 Rounds
@@ -7,6 +8,18 @@ Rounds
 <h1>
 	Rounds
 </h1>
+
+<h2>Puzzles with no answer</h2>
+<p>
+(Includes ideas that need an answer assigned as well as answer-flexible
+puzzles that have a slot reserved, sorry maybe one day we will untangle this)
+</p>
+{% puzzle_list no_answer request.user %}
+
+<h2>Puzzles with more than one answer</h2>
+{% puzzle_list multi_answer request.user %}
+
+<h1>Total Unassigned Answers: {{ total_unassigned }}</h1>
 
 <input id="hide-assignments" type="checkbox" class="hide-assignments" checked> <label for="hide-assignments">Hide puzzle assignments</label>
 <input id="hide-delete-answer" type="checkbox" class="hide-delete-answer" checked> <label for="hide-delete-answer">Hide delete answer buttons</label>
@@ -24,6 +37,7 @@ Rounds
 		<th colspan="3">Answer</th>
 		<th>Puzzle</th>
 		<th>Status</th>
+		<th>Credits</th>
 		<th>Notes</th>
 	</tr>
 	{% for answer in round.answers %}
@@ -56,6 +70,10 @@ Rounds
 				<span class="assignment-spoiler">{{ puzzle.get_status_display }}</span>
 				<span class="assignment-unspoiler">(hidden)</span>
 			</td>
+			<td>
+				<span class="assignment-spoiler">{% for author in puzzle.authors.all %}{% if not forloop.first %}, {% endif %}{{ author.credits_name }}{% endfor %}</span>
+				<span class="assignment-unspoiler">(hidden)</span>
+			</td>
 			{% if forloop.first %}
 			<td rowspan="{{ answer.puzzles|length }}" class="small-md">
 				{% if answer.notes %}{{ answer.notes|markdown }}{% endif %}
@@ -77,14 +95,14 @@ Rounds
 				</form>
 			</td>
 			<td>{{ answer.answer }}</td>
-			<td colspan="2" class="empty">(no puzzle assigned)</td>
+			<td colspan="3" class="empty">(no puzzle assigned)</td>
 			<td class="small-md">
 				{% if answer.notes %}{{ answer.notes|markdown }}{% endif %}
 			</td>
 		{% endif %}
 	{% endfor %}
 	<tr>
-		<td colspan="6">
+		<td colspan="7">
 			<form method="post">
 				{% csrf_token %}
 				{{ round.form.as_p }}

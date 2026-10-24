@@ -491,10 +491,14 @@ blockquote > p:last-child {
 .hide-assignments:not(:checked) ~ div > table .assignment-unspoiler {
 	display: none;
 }
-.hide-test-authored:checked + label + input + label + div > table tr.test-authored {
+/* 😱 */
+.hide-test-authored:checked + label + input + label + input + label + div > table tr.test-authored {
 	display: none;
 }
-.hide-test-spoiled:checked + label + div > table tr.test-spoiled {
+.hide-test-spoiled:checked + label + input + label + div > table tr.test-spoiled {
+	display: none;
+}
+.hide-test-already:checked + label + div > table tr.test-already {
 	display: none;
 }
 .deemph {

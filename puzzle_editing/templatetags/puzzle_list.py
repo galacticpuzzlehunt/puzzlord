@@ -11,6 +11,7 @@ import puzzle_editing.status as status
 from puzzle_editing.models import PuzzleTag
 from puzzle_editing.models import PuzzleVisited
 from puzzle_editing.models import User
+from puzzle_editing.templatetags.testsolve_summary import find_sessions
 
 register = template.Library()
 
@@ -52,14 +53,15 @@ def make_puzzle_data(puzzles, user, do_query_filter_in):
     )
 
     puzzles = list(puzzles)
+    puzzle_ids = [puzzle.id for puzzle in puzzles]
+    id_to_index = {puzzle.id: i for i, puzzle in enumerate(puzzles)}
 
+    prev_test_sessions = find_sessions(puzzle_ids if do_query_filter_in else None)
     for puzzle in puzzles:
         puzzle.opt_authors = []
         puzzle.opt_editors = []
+        puzzle.opt_testsolves = prev_test_sessions[puzzle.id]
         puzzle.prefetched_important_tag_names = []
-
-    puzzle_ids = [puzzle.id for puzzle in puzzles]
-    id_to_index = {puzzle.id: i for i, puzzle in enumerate(puzzles)}
 
     # Handrolling prefetches because
     # (1) we can aggressively skip model construction

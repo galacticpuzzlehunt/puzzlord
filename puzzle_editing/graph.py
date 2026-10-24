@@ -66,7 +66,7 @@ def curr_puzzle_graph_b64(time: str, target_count):
         now = datetime.now()
         xmax = x[-1] if x else now
         plt.xlim(xmax - timetypes[time], now)
-    colormap = [i for i in matplotlib.cm.get_cmap("tab20").colors]
+    colormap = [i for i in matplotlib.colormaps["tab20"].colors]
     col = (colormap[::2] + colormap[1::2])[: len(status.STATUSES) - len(exclude)]
     ax.stackplot(x, np.transpose(y), labels=labels, colors=col[-1::-1])
     if target_count is not None:

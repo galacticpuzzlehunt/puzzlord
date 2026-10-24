@@ -1,0 +1,13 @@
+<td sorttable_customkey="{{ sort_key }}">
+	<div style="display: flex">
+		{% for session in sessions %}
+			<a
+				href="{% url 'testsolve_one' session.id %}"
+				title="{{ session.start_date }}{% if session.start_date != session.last_date %}–{{ session.last_date }}{% endif %}"
+				style="text-decoration: none"
+			>
+				{% if session.is_correct %}✅{% else %}❓{% endif %}
+			</a>
+		{% endfor %}
+	</div>
+</td>

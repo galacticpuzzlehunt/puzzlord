@@ -4,7 +4,7 @@ from settings.base import SITE_PASSWORD
 
 DEBUG = False
 
-ALLOWED_HOSTS = ['.www.example.com'] # FIXME: where are you hosting puzzlord staging?
+ALLOWED_HOSTS = [".www.example.com"]  # FIXME: where are you hosting puzzlord?
 
 # security checks
 assert SECRET_KEY != "FIXME_SECRET_KEY_GOES_HERE"

@@ -47,7 +47,10 @@
 				<div class="nav-login">
 				{% if request.user.is_authenticated %}
 				Logged in as <a href="{% url 'account' %}">{{ request.user.username }}</a>
-				(<a href="{% url 'logout' %}">Logout</a>)
+				<form method="post" action="{% url 'logout' %}" style="display: inline">
+					{% csrf_token %}
+					<button type="submit">Logout</button>
+				</form>
 				{% else %}
 				<a href="{% url 'login' %}">Login</a> or
 				<a href="{% url 'register' %}">Register</a>
@@ -173,6 +176,23 @@
 			if (links[i].hostname != window.location.hostname) {
 				links[i].target = '_blank';
 			}
+			}
+
+			for (const textarea of document.querySelectorAll('textarea')) {
+				const initialValue = textarea.value;
+				let edited = false;
+				textarea.addEventListener('input', evt => {
+					edited = (textarea.value != initialValue);
+				});
+				textarea.closest('form')?.addEventListener('submit', evt => {
+					edited = false;
+				});
+				window.addEventListener('beforeunload', evt => {
+					if (edited) {
+						evt.preventDefault();
+						evt.returnValue = true;
+					}
+				});
 			}
 		</script>
 		<script src="{% static 'sorttable.js' %}"></script>

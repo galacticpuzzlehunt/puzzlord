@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import tempfile
 from zipfile import ZIP_DEFLATED
 from zipfile import ZipFile
 
@@ -10,6 +11,15 @@ from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 
 from puzzle_editing.models import PuzzlePostprod
+
+
+def get_puzzle_path(pp):
+    puzzleFolder = os.path.realpath(os.path.join(settings.HUNT_REPO, "puzzle"))
+    puzzlePath = os.path.realpath(os.path.join(puzzleFolder, pp.slug))
+    # Slugs end up in paths we rmtree and zip up; keep them inside the folder.
+    if os.path.dirname(puzzlePath) != puzzleFolder:
+        raise Exception("Invalid puzzle slug.")
+    return puzzlePath
 
 
 def get_latest_zip(pp):
@@ -29,14 +39,11 @@ def get_latest_zip(pp):
     origin = repo.remotes.origin
     origin.pull()
 
-    puzzleFolder = os.path.join(settings.HUNT_REPO, "puzzle")
-    puzzlePath = os.path.join(puzzleFolder, pp.slug)
-    zipPath = f"/tmp/puzzle{pp.puzzle.id}.zip"
+    puzzlePath = get_puzzle_path(pp)
+    # Unnamed and deleted when closed (FileResponse closes it after sending).
+    zipFile = tempfile.TemporaryFile()
 
-    if os.path.exists(zipPath):
-        os.remove(zipPath)
-
-    with ZipFile(zipPath, "w", ZIP_DEFLATED) as zipHandle:
+    with ZipFile(zipFile, "w", ZIP_DEFLATED) as zipHandle:
         for root, dirs, files in os.walk(puzzlePath):
             for file in files:
                 if file != "metadata.json":
@@ -45,7 +52,8 @@ def get_latest_zip(pp):
                         os.path.relpath(os.path.join(root, file), puzzlePath),
                     )
 
-    return zipPath
+    zipFile.seek(0)
+    return zipFile
 
 
 def deploy_puzzle(pp, deploy_zip=True):
@@ -65,7 +73,6 @@ def deploy_puzzle(pp, deploy_zip=True):
     origin = repo.remotes.origin
     origin.pull()
 
-    puzzleFolder = os.path.join(settings.HUNT_REPO, "puzzle")
     answers = pp.puzzle.answers.all()
     answer = "???"
     if answers:
@@ -77,7 +84,7 @@ def deploy_puzzle(pp, deploy_zip=True):
         "puzzle_idea_id": pp.puzzle.id,
         "puzzle_slug": pp.slug,
     }
-    puzzlePath = os.path.join(puzzleFolder, pp.slug)
+    puzzlePath = get_puzzle_path(pp)
     if deploy_zip:
         if os.path.exists(puzzlePath):
             shutil.rmtree(puzzlePath)

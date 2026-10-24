@@ -19,7 +19,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
+# SECURITY WARNING: keep the secret key used in production secret! You can run
+# the following to print a secret key and then paste it into the below call:
+# python3 -c 'from django.core.management import utils; print(utils.get_random_secret_key())'
 SECRET_KEY = os.environ.get("SECRET_KEY", "FIXME_SECRET_KEY_GOES_HERE")
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -206,6 +208,5 @@ TESTSOLVE_SHEETS_CONFIG = {
     "enabled": False,
     "credentials_path": "keys/google-service-account-credentials.json",
     "folder_id": "FIXME_FOLDER_ID_GOES_HERE",
-    "spreadsheet_template_path": "puzzle_editing/spreadsheet-template.xlsx",
-    "spreadsheet_mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "template_id": "FIXME_TEMPLATE_ID_GOES_HERE",
 }

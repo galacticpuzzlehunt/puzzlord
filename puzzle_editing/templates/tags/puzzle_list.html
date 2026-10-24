@@ -1,3 +1,4 @@
+{% load testsolve_summary %}
 {% load user_list %}
 {% load markdown %}
 {% load humanize %}
@@ -23,6 +24,7 @@
 			<th>Summary</th>
 			<th>Priority</th>
 			<th>Editors</th>
+			<th>Testsolves</th>
 			<th>Last Updated</th>
 			<th>Last Comment</th>
 			<th>🏃</th>
@@ -51,6 +53,7 @@
 			<td class="small-md">{{ puzzle.summary }}</td>
 			<td sorttable_customkey="{{ puzzle.priority }}">{{ puzzle.get_priority_display }}</td>
 			<td>{{ puzzle.opt_editors|length }} / {{ puzzle.needed_editors }}: {{ puzzle.editors_html }}</td>
+			{% testsolve_summary puzzle.opt_testsolves %}
 			<td sorttable_customkey="{{ puzzle.last_updated.timestamp }}" class="timestamp"
 				data-timestamp="{{ puzzle.last_updated.timestamp }}">{{ puzzle.last_updated }}</td>
 			{% if puzzle.last_comment_date %}

@@ -310,7 +310,16 @@ class PuzzlePostprod(models.Model):
         max_length=50,
         null=False,
         blank=False,
-        validators=[RegexValidator(regex=r'[^<>#%"\'|{})(\[\]\/\\\^?=`;@&, ]{1,50}')],
+        validators=[
+            # RegexValidator only searches for a match, so anchor with ^ and $
+            # to check every character.
+            RegexValidator(regex=r'^[^<>#%"\'|{})(\[\]\/\\\^?=`;@&, ]{1,50}$'),
+            # inverse_match: fail if this matches. Since "/" is banned above,
+            # "." and ".." are the only slugs that escape the puzzle's own
+            # folder (deploy_puzzle would delete the puzzle folder or the
+            # whole hunt repo).
+            RegexValidator(regex=r"^\.\.?$", inverse_match=True),
+        ],
         help_text="The part of the URL on the hunt site referrring to this puzzle. E.g. for https://puzzle.hunt/puzzle/fifty-fifty, this would be 'fifty-fifty'.",
     )
     zip_file = models.FileField(

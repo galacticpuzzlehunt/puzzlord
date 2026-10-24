@@ -70,6 +70,9 @@ activated the virtualenv first. Then add the dependency to `requirements.txt`.
 - Create a Google Drive folder (using any Google account, such as a personal account) and share it with the service account's email with editor permissions.
 - Copy the ID of the folder into `TESTSOLVE_SHEETS_CONFIG["folder_id"]` in `settings/base.py`.
 	- You can get the ID of the folder by navigating to the folder in Google Drive and looking at the URL.
+- Create a Google Sheet to use as the testsolve sheet template, and share it with the service account's email with editor permissions. (Putting it in the folder above is enough.)
+- Copy the ID of the sheet into `TESTSOLVE_SHEETS_CONFIG["template_id"]` in `settings/base.py`.
+	- The ID is the part of `https://docs.google.com/spreadsheets/d/SOME_STRING/edit` between `/d/` and `/edit`.
 - Set `TESTSOLVE_SHEETS_CONFIG["enabled"]` to `True`.
 
 ### Troubleshooting

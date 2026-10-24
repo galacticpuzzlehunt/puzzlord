@@ -1,5 +1,5 @@
 # I like pip-tools for pinning dependencies: https://github.com/jazzband/pip-tools
-pip-tools==6.12.2
+pip-tools==7.6.1
 django
 gevent
 gunicorn

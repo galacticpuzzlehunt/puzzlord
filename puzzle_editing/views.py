@@ -1,5 +1,4 @@
 import datetime
-import os
 import random
 import re
 
@@ -18,6 +17,8 @@ from django.db.models import OuterRef
 from django.db.models import Q
 from django.db.models import Subquery
 from django.db.models.functions import Lower
+from django.http import FileResponse
+from django.http import Http404
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
@@ -25,7 +26,6 @@ from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.utils.html import mark_safe
 from django.views.decorators.csrf import csrf_exempt
-from django.views.static import serve
 
 import puzzle_editing.messaging as messaging
 import puzzle_editing.status as status
@@ -53,6 +53,7 @@ from puzzle_editing.models import TestsolveGuess
 from puzzle_editing.models import TestsolveParticipation
 from puzzle_editing.models import TestsolveSession
 from puzzle_editing.models import User
+from puzzle_editing.templatetags.testsolve_summary import find_sessions
 
 
 def get_sessions_with_joined_and_current(user):
@@ -302,12 +303,16 @@ class UserCheckboxSelectMultiple(forms.CheckboxSelectMultiple):
 class UserMultipleChoiceField(forms.ModelMultipleChoiceField):
     def __init__(self, *args, **kwargs):
         orderings = []
+        annotations = {}
         if kwargs.get("editors_first", False):
-            orderings.append("-user_permissions")
+            orderings.append("-num_perms")
+            annotations["num_perms"] = Count("user_permissions")
             del kwargs["editors_first"]
         orderings.append(Lower("username"))
         if "queryset" not in kwargs:
-            kwargs["queryset"] = User.objects.all().order_by(*orderings)
+            kwargs["queryset"] = (
+                User.objects.all().annotate(**annotations).order_by(*orderings)
+            )
         if "widget" not in kwargs:
             kwargs["widget"] = UserCheckboxSelectMultiple()
         super(UserMultipleChoiceField, self).__init__(*args, **kwargs)
@@ -323,9 +328,18 @@ class PuzzleInfoForm(forms.ModelForm):
 
     class Meta:
         model = Puzzle
-        fields = ["name", "codename", "authors", "summary", "description", "notes"]
+        fields = [
+            "name",
+            "codename",
+            "authors",
+            "summary",
+            "description",
+            "notes",
+            "tags",
+        ]
         widgets = {
             "authors": forms.CheckboxSelectMultiple(),
+            "tags": forms.CheckboxSelectMultiple(),
         }
 
 
@@ -395,12 +409,14 @@ class PuzzleContentForm(forms.ModelForm):
     class Meta:
         model = Puzzle
         fields = ["content"]
+        widgets = {"content": MarkdownTextarea}
 
 
 class PuzzleSolutionForm(forms.ModelForm):
     class Meta:
         model = Puzzle
         fields = ["solution"]
+        widgets = {"solution": MarkdownTextarea}
 
 
 class PuzzlePriorityForm(forms.ModelForm):
@@ -510,7 +526,10 @@ def puzzle(request, id):  # noqa: C901
     if request.method == "POST":
         if "do_spoil" in request.POST:
             puzzle.spoiled.add(user)
-        elif "change_status" in request.POST:
+        elif (
+            "change_status" in request.POST
+            and request.POST["change_status"] in status.DESCRIPTIONS
+        ):
             new_status = request.POST["change_status"]
             puzzle.status = new_status
             puzzle.save()
@@ -916,8 +935,10 @@ def puzzle_postprod(request, id):
 @login_required
 def postprod_zip(request, id):
     pp = get_object_or_404(PuzzlePostprod, puzzle__id=id)
-    loc = utils.get_latest_zip(pp)
-    return serve(request, os.path.basename(loc), os.path.dirname(loc))
+    zipFile = utils.get_latest_zip(pp)
+    if zipFile is None:
+        raise Http404("No hunt repo configured")
+    return FileResponse(zipFile, content_type="application/zip")
 
 
 class PuzzlePeopleForm(forms.ModelForm):
@@ -1221,17 +1242,20 @@ def testsolve_main(request):
                 User.objects.filter(spoiled_puzzles=OuterRef("pk"), id=user.id)
             ),
             in_session=Exists(current_sessions.filter(puzzle=OuterRef("pk"))),
+            was_in_session=Exists(past_sessions.filter(puzzle=OuterRef("pk"))),
             has_session=Exists(joinable_sessions.filter(puzzle=OuterRef("pk"))),
         )
         .order_by("priority")
     )
 
+    prev_test_sessions = find_sessions(testsolvable_puzzles)
     testsolvable = [
         {
             "puzzle": puzzle,
             "warning": warn_about_testsolving(
                 puzzle.is_spoiled, puzzle.in_session, puzzle.has_session
             ),
+            "sessions": prev_test_sessions[puzzle.id],
         }
         for puzzle in testsolvable_puzzles
     ]
@@ -1768,6 +1792,19 @@ def rounds(request):
 
         return redirect(urls.reverse("rounds"))
 
+    puzzles_by_answers = (
+        Puzzle.objects
+        .exclude(status__in=status.STATUSES[:status.STATUSES.index(status.IDEA_IN_DEVELOPMENT_ASSIGNED)])
+        .annotate(answer_count=Subquery(
+            Puzzle.objects.filter(id=OuterRef("pk")).values_list(Count("answers"))
+        ))
+    )
+    total_unassigned = len(
+        PuzzleAnswer.objects
+        .annotate(puzzle_count=Count("puzzles"))
+        .filter(puzzle_count=0)
+    )
+
     rounds = [
         {
             "id": round.id,
@@ -1792,6 +1829,9 @@ def rounds(request):
         request,
         "rounds.html",
         {
+            "no_answer": puzzles_by_answers.filter(answer_count=0),
+            "multi_answer": puzzles_by_answers.filter(answer_count__gt=1),
+            "total_unassigned": total_unassigned,
             "rounds": rounds,
             "new_round_form": RoundForm(),
         },
@@ -2135,7 +2175,7 @@ def editors(request):
     for user in users:
         user.full_display_name = get_full_display_name(user)
         # FIXME You can do this quickly in Django 3.x
-        user.is_meta_editor = user.has_perm("alientoyshop.change_round")
+        user.is_meta_editor = user.has_perm("puzzle_editing.change_round")
 
     users = [user for user in users if user.is_meta_editor or user.editing_all > 0]
 

@@ -14,7 +14,6 @@ from django.db.utils import OperationalError
 from django.test import TransactionTestCase
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
-from googleapiclient.http import MediaFileUpload
 
 from puzzle_editing.models import Puzzle
 from puzzle_editing.models import TestsolveSession
@@ -67,24 +66,12 @@ def set_session_spreadsheet_link(session, spreadsheet_link):
 def send_create_sheet_request(sheet_name):
     file_metadata = {
         "name": sheet_name,
-        # Target MIME type. This tells Drive to convert the file
-        # into the Google Sheets format instead of keeping it in
-        # Office format.
-        "mimeType": "application/vnd.google-apps.spreadsheet",
-        # The folder that the file should be uploaded to.
+        # The folder that the copy should be placed in.
         "parents": [CONFIG["folder_id"]],
     }
-    spreadsheet_template_path = os.path.join(
-        settings.BASE_DIR, CONFIG["spreadsheet_template_path"]
-    )
-    media = MediaFileUpload(
-        spreadsheet_template_path,
-        mimetype=CONFIG["spreadsheet_mimetype"],
-        resumable=True,
-    )
     files_service = get_drive_api_client().files()
-    return files_service.create(
-        body=file_metadata, media_body=media, fields="id,webViewLink"
+    return files_service.copy(
+        fileId=CONFIG["template_id"], body=file_metadata, fields="id,webViewLink"
     ).execute()
 
 
@@ -130,7 +117,7 @@ def create_testsolve_sheet(session):
 
     # Optimistically create a sheet. If someone else creates
     # another sheet before us, we'll delete the sheet.
-    file = send_create_sheet_request(f"TS {session.id}: {session.puzzle.name}.xlsx")
+    file = send_create_sheet_request(f"TS {session.id}: {session.puzzle.name}")
     link = file.get("webViewLink")
     spreadsheet_id = file.get("id")
 

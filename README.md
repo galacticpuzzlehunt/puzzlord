@@ -17,7 +17,7 @@ Some goals and consequences of Puzzlord's design:
     - No uploading files for puzzles or solutions. Instead, you can just paste links to external files or docs, which is what we almost always did when using Puzzletron anyway.
     - ~~No direct connection to postprodding. It is expected that postprodders will format the puzzle elsewhere and simply report what they did in Puzzlord.~~ We ended up implementing postprodding in Puzzlord, but it's probably one of the trickier parts to get working, and you can ignore it in some workflows.
 - Permissiveness, which dovetails with simplicity, and is OK because we generally trust our writing team:
-    - Anybody can change the status of puzzles and add/remove themselves or other people to/from any puzzle-related role (author, discussion editor, factchecker, postprodder, spoiled).
+    - Anybody can change the status of puzzles and add/remove themselves or other people to/from any puzzle-related role (author, editor, factchecker, postprodder, spoiled).
 - Improved spoiler safety:
     - Puzzles can have custom codenames, which Puzzlord will try to show to non-spoiled people.
     - Unlike in Puzzletron, where clicking to a puzzle page spoils you with no warning, Puzzlord always shows you an interstitial and requires you to confirm that you would like to be spoiled. You cannot accidentally spoil yourself on puzzles or metas.
@@ -29,7 +29,7 @@ Some features are still missing.
 
 ## First Time Setup with Virtualenv
 
-- Make sure you have `pip3` (maybe `pip`) and python 3.8+.
+- Make sure you have `pip3` (maybe `pip`) and python 3.12+.
 - Get virtualenv: `pip3 install virtualenv`
 - `cd` into the root of this repo
 - Create a virtualenv: `virtualenv venv --python python3`.
@@ -40,7 +40,7 @@ Some features are still missing.
 	- Alternatively use `venv/bin/activate.csh` or `venv/bin/activate.fish` if you're using csh or fish
 	- Use `venv\Scripts\activate` on Windows.
 - Install the required packages (mainly Django): `pip3 install -r requirements.txt`
-	- Are you getting `fatal error: Python.h: No such file or directory`? Try installing `python-dev` libraries first (e.g. `sudo apt-get install python-dev`).
+	- Are you getting `fatal error: Python.h: No such file or directory`? Try installing `python3-dev` libraries first (e.g. `sudo apt-get install python3-dev`).
 - Create a folder for logs to go in: `mkdir logs`
 - **Fix all the configuration options, secret keys and credentials:**
 	- the SECRET_KEY and SITE_PASSWORD in `settings/base.py` (the SECRET_KEY should be a highly secure random string, which Django uses for hashes, CSRF tokens, and such; the SITE_PASSWORD is what you will give out to users to let them register accounts)
@@ -55,13 +55,14 @@ Some features are still missing.
 
 If all went well, the dev server should start, the local IP and port should be
 printed to stdout, and it should helpfully tell you you're running Django
-4.0.3.
+6.1.
 
 Later, when you're done working on the project and want to leave the virtualenv,
 run `deactivate`.
 
 If you ever need to install more pip packages for this project, make sure you've
-activated the virtualenv first. Then add the dependency to `requirements.txt`.
+activated the virtualenv first. Then add the dependency to `requirements.in` and
+regenerate `requirements.txt` with `pip-compile --annotation-style=line requirements.in`.
 
 ### Testsolve Sheets Setup
 
@@ -78,7 +79,7 @@ activated the virtualenv first. Then add the dependency to `requirements.txt`.
 ### Troubleshooting
  - Did you forget to source the virtualenv?
  - Did you forget to install all the requirements?
- - Are you running python 2? If `python version` starts with 2, you might need to install python 3, or to swap `python` to `python3` at the beginning of your commands.
+ - Are you running python 2? If `python --version` starts with 2, you might need to install python 3, or to swap `python` to `python3` at the beginning of your commands.
 
 ## How to use `manage.py`
 
@@ -89,7 +90,8 @@ activated the virtualenv first. Then add the dependency to `requirements.txt`.
 ## Where are things?
 
 The root of this repository is the Django project
-Site-wide configuration lives inside the `puzzlord` directory.
+Settings live inside the `settings` directory, and site-wide URL routing inside
+the `puzzlord` directory.
 
 The Django project (currently) has only one app, called "puzzle_editing". Most
 business logic and UI lives inside the `puzzle_editing` directory.
